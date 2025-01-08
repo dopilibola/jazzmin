@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'maskan',
+    'one_to_one',
 ]
 
 MIDDLEWARE = [
