@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>Malumot to'ldir</h1>
-    <form method="post">
+    <form action="{% url 'guardianship' %}" method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Submit</button>

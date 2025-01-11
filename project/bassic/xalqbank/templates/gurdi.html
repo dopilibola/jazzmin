@@ -1,14 +1,14 @@
-{% comment %} <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Xazna cambunatsiya</title>
 </head>
 <body>
-    <h1>Malumot to'ldir</h1>
-    <form method="post">
+    <h1>Malumot to'ldir vasiy </h1>
+    <form  method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Submit</button>
     </form>
 </body>
-</html> {% endcomment %}
+</html> 
