@@ -10,4 +10,5 @@ urlpatterns = [
     path('update_password/', views.update_password, name='update_password' ),
     path('/one-to-one/', include('one_to_one.urls')),
     path('/selle/', include('selle.urls')),
+    path('/xalqbank/', include('xalqbank.urls')),
 ]
