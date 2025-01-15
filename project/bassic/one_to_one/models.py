@@ -1,17 +1,26 @@
 from django.db import models
-import datetime
+
 
 # o'lgan odamni ma'lumotlari 
 class Infodata(models.Model):
-    first_name = models.CharField(max_length=20, blank=True)
-    last_name = models.CharField(max_length=20, blank=True)
     idname = models.CharField(max_length=20, blank=True)
-    passportdata = models.CharField(max_length=20, blank=True)
-    birthday = models.CharField(max_length=20, blank=True)
-    data = models.DateField(default=datetime.datetime.today)
+    malumotnoma_num = models.CharField(max_length=20, blank=True)
+    full_name = models.CharField(max_length=50, blank=True)
+    vafot_etgan_sana = models.CharField(max_length=20, blank=True)
+    dalolatnoma_sanasi = models.CharField(max_length=20, blank=True)
+    dalolatnoma_raqami =models.CharField(max_length=20, blank=True)
+    olim_sababi = models.CharField(max_length=20, blank=True)
+    qayt_qilingan_FHDY_bolim = models.CharField(max_length=20, blank=True)
+    tugilgan_vaqti = models.CharField(max_length=20, blank=True)
+    yosh = models.CharField(max_length=20, blank=True)
+    vafot_etgan_joy = models.CharField(max_length=20, blank=True)
+    malumot_berilgan_sana = models.CharField(max_length=20, blank=True)
+    vafot_etgan_shaxsning_JSHIR = models.CharField(max_length=20, blank=True)
+    tibbiyot_muassasasi = models.CharField(max_length=20, blank=True)
+
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name} - {self.passportdata}'
+        return f'{self.full_name} {self.vafot_etgan_sana} - {self.vafot_etgan_shaxsning_JSHIR}'
 
 
 

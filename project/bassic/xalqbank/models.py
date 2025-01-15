@@ -17,7 +17,7 @@ class Desnoot(models.Model):
     
     #kafilni ma'lumotlari va cart numberi  
 class Guardianship(models.Model):
-    idname = models.CharField(max_length=20, blank=True)
+    idname = models.CharField(max_length=20, blank=True) 
     surname = models.CharField(max_length=20, blank=True)
     name = models.CharField(max_length=20, blank=True)
     patronymic = models.CharField(max_length=20, blank=True)
