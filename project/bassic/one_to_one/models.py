@@ -17,20 +17,25 @@ class Infodata(models.Model):
     malumot_berilgan_sana = models.CharField(max_length=20, blank=True)
     vafot_etgan_shaxsning_JSHIR = models.CharField(max_length=20, blank=True)
     tibbiyot_muassasasi = models.CharField(max_length=20, blank=True)
-
-
+    royhatga_olingan_vaqt = models.CharField(max_length=20, blank=True)
+    
+    karta_number = models.CharField(max_length=20, blank=True)
+    qator =  models.CharField(max_length=20, blank=True)
+    qabr_soni = models.CharField(max_length=20, blank=True)
+    
     def __str__(self):
         return f'{self.full_name} {self.vafot_etgan_sana} - {self.vafot_etgan_shaxsning_JSHIR}'
 
+# go'rkov uchun qabirni topish uchun applar
+
+class Qabriston(models.Model):
+    idname = models.CharField(max_length=20, blank=True)
+    karta_number = models.CharField(max_length=20, blank=True)
+    qator =  models.CharField(max_length=20, blank=True)
+    qabr_soni = models.CharField(max_length=20, blank=True)
+
+    def __str__(self):
+        return f'{self.karta_number} - {self.qator} {self.qabr_soni}'
 
 
 
-# o'lgan odamni qarindoshini ma'lumotlari 
-# class Infodata2(models.Model):
-#     first_name = models.CharField(max_length=20, blank=True)
-#     last_name = models.CharField(max_length=20, blank=True)
-#     phone = models.CharField(max_length=20, blank=True)
-#     Cousins = models.CharField(max_length=20, blank=True)
-    
-
-# Create your models here.
