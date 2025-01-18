@@ -22,3 +22,8 @@ def guardianship(request):
     else:
         form = GuardianshipForm()
     return render(request, 'gurdi.html', {'form':form})
+
+def suc(request):
+    return render(request, 'suc.html')
+
+
