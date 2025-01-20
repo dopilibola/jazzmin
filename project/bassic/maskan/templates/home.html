@@ -10,14 +10,47 @@
 
 <link href="{% static 'css/home.css' %}" rel="stylesheet" />
          <!--header-->
-            <header class="p-3 mb-2 bg-primary text-white">
+            {% comment %} <header class="p-3 mb-2 bg-primary text-white">
                 <div class="container px-3 px-lg-5">
                     <div class="text-center text-uppercase">
                         <h1 class="mb-4">Maskan</h1>
                         <p class="lead">mushkulini oson qilamiz</p>
                     </div>
                 </div>
+            </header> {% endcomment %}
+
+
+
+            <header class="p-3 mb-2 bg-primary text-white">
+                <div class="container d-flex align-items-center justify-content-between px-3 px-lg-5">
+                    <!-- Logotip joyi -->
+                    <div class="logo">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="Logo" style="max-width: 100px;">
+                    </div>
+                    
+                    <!-- Matn joyi -->
+                    <div class="text-end text-uppercase">
+                        <h1 class="mb-4" style="font-family: 'Georgia', serif; font-size: 2.5rem;">Maskan</h1>
+                        <p class="lead" style="font-family: 'Arial', sans-serif;">Mushkulini oson qilamiz</p>
+                    </div>
+                </div>
             </header>
+            
+            <style>
+            /* Matnni o'ng tomonga joylash uchun va logotip bilan ajratish uchun */
+            header .logo {
+                flex-shrink: 0; /* Logotip o'z o'lchamida qolsin */
+            }
+            header .text-end {
+                flex-grow: 1; /* Matn maydoni kengaytiriladi */
+            }
+            header .container {
+                display: flex;
+                align-items: center; /* Vertikal markazlashtirish */
+                justify-content: space-between; /* Logotip va matn orasini ajratish */
+            }
+            </style>
+            
             {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'add_infodata' %}">o'likni ro'yhatga olish </a></li>  {% endcomment %}
             {% comment %} <li class="nav-item">
                 <a class="nav-link custom-button" href="{% url 'add_infodata' %}">
