@@ -58,29 +58,36 @@
                 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
                 <style>
                     .custom-button {
-                        width: 200px;
-                        height: 100px;
+                        width: 200px; /* Tugmachaning kengligi */
+                        height: 80px; /* Tugmachaning balandligi */
+                        display: flex; /* Matnni joylash uchun flexbox */
+                        justify-content: center; /* Matnni gorizontal markazlash */
+                        align-items: center; /* Matnni vertikal markazlash */
                         text-align: center;
-                        background-color:white; /* Tugmachaning rangi */
-                        border: 2px black; /* Tugmachaning chet rangi */
+                        background-color: white; /* Tugmachaning rangi */
+                        border: 2px solid black; /* Tugmachaning chet rangi */
                         border-radius: 8px; /* Tugmachaning burchaklarini yumaloq qilish */
                         color: #000;
                         font-weight: bold;
                         font-size: 18px;
                         transition: background-color 0.3s ease, transform 0.2s ease;
+                        padding: 10px; /* Matn va chetlar orasidagi bo‘shliq */
+                        box-sizing: border-box; /* Padding tugmachaning o‘lchamiga ta’sir qilmasligi uchun */
                     }
+                    
             
                     .custom-button:hover {
-                        background-color: blue; /* Hoverdagi rangi */
+                        background-color: #1E90FF; /* Hoverdagi rangi */
                         color: #fff; /* Hoverdagi matn rangi */
                         transform: scale(1.45); /* Tugmachani kattalashtirish */
                     }
             
                     .button-icon {
-                        width: 40px;
-                        height: 40px;
+                        width: 60px;
+                        height: 60px;
                         display: block;
-                        margin: 0 auto 10px; /* Ikonkani markazlashtirish */
+                        margin: 0 auto; /* Ikonkani markazlashtirish */
+                        margin-bottom: 10px;
                     }
                 </style>
             </head>
