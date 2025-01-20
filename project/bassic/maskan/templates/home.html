@@ -1,27 +1,140 @@
 
 {%  extends 'base.html' %}
+
 {% load static %}
 
 
 
 
 {% block content %}
+
+<link href="{% static 'css/home.css' %}" rel="stylesheet" />
          <!--header-->
-            <header class="bg-dark text-white py-5">
-                <div class="container px-4 px-lg-5">
+            <header class="p-3 mb-2 bg-primary text-white">
+                <div class="container px-3 px-lg-5">
                     <div class="text-center text-uppercase">
-                        <h1 class="mb-4">Home</h1>
-                        <p class="lead">Welcome home</p>
+                        <h1 class="mb-4">Maskan</h1>
+                        <p class="lead">mushkulini oson qilamiz</p>
                     </div>
                 </div>
             </header>
-            <li class="nav-item"><a class="nav-link" href="{% url 'add_infodata' %}">o'likni ro'yhatga olish </a></li> 
+            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'add_infodata' %}">o'likni ro'yhatga olish </a></li>  {% endcomment %}
+            {% comment %} <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'add_infodata' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    O'likni ro'yhatga olish
+                </a>
+            </li> {% endcomment %}
+{% comment %}             
+            <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'home_selle' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    Qabristonda joy sotib olish 
+                </a>
+            </li> {% endcomment %}
 
-            <li class="nav-item"><a class="nav-link" href="{% url 'home_selle' %}">Qabristonda joy sotib olish  </a></li> 
 
-            <li class="nav-item"><a class="nav-link" href="{% url 'ulganlik' %}">O'lganlik uchun pul to'lab berish   </a></li> 
+{% comment %} 
+            <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'ulganlik' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    O'lganlik uchun pul to'lab berish
+                </a>
+            </li> {% endcomment %}
+
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Bootstrap Tugmachalar</title>
+                <!-- Bootstrap CSS -->
+                <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                    .custom-button {
+                        width: 200px;
+                        height: 100px;
+                        text-align: center;
+                        background-color:white; /* Tugmachaning rangi */
+                        border: 2px black; /* Tugmachaning chet rangi */
+                        border-radius: 8px; /* Tugmachaning burchaklarini yumaloq qilish */
+                        color: #000;
+                        font-weight: bold;
+                        font-size: 18px;
+                        transition: background-color 0.3s ease, transform 0.2s ease;
+                    }
+            
+                    .custom-button:hover {
+                        background-color: blue; /* Hoverdagi rangi */
+                        color: #fff; /* Hoverdagi matn rangi */
+                        transform: scale(1.45); /* Tugmachani kattalashtirish */
+                    }
+            
+                    .button-icon {
+                        width: 40px;
+                        height: 40px;
+                        display: block;
+                        margin: 0 auto 10px; /* Ikonkani markazlashtirish */
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container my-5">
+                    <div class="row text-center justify-content-between">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'add_infodata' %}" class="custom-button d-block">
+                                <img src="{% static 'assets/maskan.ico' %}" alt="Icon 1" class="button-icon">
+                                Ro'yhatga olish 
+                            </a>
+                        </div>
+                        {% comment %} <div class="col-md-4 mb-3">
+                            <a href="{% url 'home_selle' %}" class="custom-button d-block">
+                                <img src="{% static 'icons/document-icon2.png' %}" alt="Icon 2" class="button-icon">
+                                Qabristonda 
+                            </a>
+                        </div> {% endcomment %}
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'ulganlik' %}" class="custom-button d-block">
+                                <img src="{% static 'assets/xazna.ico' %}" alt="Icon 3" class="button-icon">
+                                Dafn pulini olish 
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Bootstrap JS -->
+                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+            </body>
+            </html>
+            
 
 
+
+
+
+
+
+
+
+
+            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'home_selle' %}">Qabristonda joy sotib olish  </a></li>  {% endcomment %}
+
+            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'ulganlik' %}">O'lganlik uchun pul to'lab berish   </a></li>  {% endcomment %}
+
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
+<br><br/><br><br/><br><br/><br><br/>
 
 
 
