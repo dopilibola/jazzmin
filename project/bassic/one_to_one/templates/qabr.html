@@ -14,6 +14,9 @@
             <p class="text-center text-muted">
                 Agar yuqoridagi holatga duch kelgan bo'lsangiz, iltimos, quyidagi formani to'ldiring.
             </p>
+            <h2>Agar qabristonda joy bo'lmasa shu qatorni to'ldiring    </h2>
+            <a href="{% url 'qabr' %}"><button>Yes</button></a>
+            <a href="{% url 'contact_success' %}"><button>No</button></a>
             <form method="post" class="needs-validation" novalidate>
                 {% csrf_token %}
                 {{ form.as_p }}

@@ -29,8 +29,6 @@ INSTALLED_APPS = [
 
     'maskan',
     'one_to_one',
-    'selle',
-    'xalqbank',
     
 ]
 

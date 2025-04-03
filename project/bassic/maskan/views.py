@@ -10,6 +10,9 @@ from django.shortcuts import redirect
 def home(request):
     return render(request, 'home.html',)
 
+
+
+
 def login_user(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -26,11 +29,20 @@ def login_user(request):
     else: 
         return render(request, 'login.html', {})
     
+
+
+
+
 def logout_user(request):
     logout(request)
     messages.success(request, 'Logged out succesfully')
     return redirect('home')
-        
+
+
+
+
+
+
 def register_user(request):
     form = SignUpForm()
     if request.method == 'POST':
@@ -50,6 +62,10 @@ def register_user(request):
     else:
         return render(request, 'register.html', {'form':form })
     
+
+
+
+
 def update_password(request):
     if request.user.is_authenticated:
         current_user = request.user
