@@ -51,7 +51,35 @@
             }
             </style>
             
+            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'add_infodata' %}">o'likni ro'yhatga olish </a></li>  {% endcomment %}
+            {% comment %} <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'add_infodata' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    O'likni ro'yhatga olish
+                </a>
+            </li> {% endcomment %}
+{% comment %}             
+            <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'home_selle' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    Qabristonda joy sotib olish 
+                </a>
+            </li> {% endcomment %}
 
+
+{% comment %} 
+            <li class="nav-item">
+                <a class="nav-link custom-button" href="{% url 'ulganlik' %}">
+                    <div class="icon-container">
+                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
+                    </div>
+                    O'lganlik uchun pul to'lab berish
+                </a>
+            </li> {% endcomment %}
 
             <!DOCTYPE html>
             <html lang="en">
@@ -111,7 +139,12 @@
                                 Qabristonda 
                             </a>
                         </div> {% endcomment %}
-                      
+                        {% comment %} <div class="col-md-4 mb-3">
+                            <a href="{% url 'ulganlik' %}" class="custom-button d-block">
+                                <img src="{% static 'assets/xazna.ico' %}" alt="Icon 3" class="button-icon">
+                                Dafn pulini olish 
+                            </a>
+                        </div> {% endcomment %}
                     </div>
                 </div>
             

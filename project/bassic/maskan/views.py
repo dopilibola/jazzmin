@@ -1,8 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .forms import SignUpForm, ChangePasswordForm
-from django.shortcuts import redirect 
+from .forms import SignUpForm, ChangePasswordForm, ProfileForm
+from .models import Profile
+from django.contrib.auth.decorators import login_required
+
 
 # Create your views here.
 
@@ -88,3 +90,38 @@ def update_password(request):
     else:
         messages.success(request, "you must be logged in to view that page ! ")
         return redirect('home')
+    
+
+
+
+
+
+
+
+@login_required
+def edit_profile(request):
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        profile = Profile(user=request.user)
+
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect('profile_detail')
+    else:
+        form = ProfileForm(instance=profile)
+
+    return render(request, 'edit_profile.html', {'form': form})
+
+def profile_detail(request):
+    # Foydalanuvchi profili haqida ma'lumot olish
+    profile = request.user.profile
+    return render(request, 'profile_detail.html', {'profile': profile})
+
+
+
+
+# vil tum shah
+

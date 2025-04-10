@@ -22,10 +22,8 @@
                         <form method="post" class="needs-validation" novalidate>
                             {% csrf_token %}
                             {{ form.as_p }}
-
-
-
-                            <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='{% url 'qabr' %}'">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                 {% comment %} onclick="window.location.href='{% url 'qabr' %}'"> {% endcomment %}
                                 Saqlash
                             </button>
                             

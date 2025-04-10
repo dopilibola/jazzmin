@@ -7,4 +7,12 @@ urlpatterns = [
     path('', include('maskan.urls')),
     path('userdata/', include('one_to_one.urls')),
 
+
 ]
+
+
+# if settings.DEBUG:
+#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+

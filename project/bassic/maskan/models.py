@@ -2,9 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 
+# Profile modelini to'g'rilaymiz
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    date_modifed = models.DateTimeField(User, auto_now=True)
+    full_name = models.CharField(max_length=100, default='Unknown')
+    job = models.CharField(max_length=255, default='Unemployed')
+    image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    date_modified = models.DateTimeField(auto_now=True)  # fixing typo in field name
     phone = models.CharField(max_length=200, blank=True)
     address1 = models.CharField(max_length=200, blank=True)
     address2 = models.CharField(max_length=200, blank=True)
@@ -16,13 +20,15 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
-# Create your models here.
 
 
+# Signal to create Profile when user is created
 def create_profile(sender, instance, created, **kwargs):
-
     if created:
-        user_profile = Profile(user=instance)
-        user_profile.save()
+        Profile.objects.create(user=instance)
 
 post_save.connect(create_profile, sender=User)
+
+
+
+# vil tuman shahar 

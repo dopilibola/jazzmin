@@ -50,3 +50,13 @@ class ChangePasswordForm(SetPasswordForm):
 		self.fields['new_password2'].label = ''
 		self.fields['new_password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'
 
+
+# profile  
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['full_name', 'job', 'image']
+
+# maskan/forms.py
+
+# maskan/forms.py
