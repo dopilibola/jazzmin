@@ -1,21 +1,27 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .forms import InfodataForm, QabristonForm, ImageForm
 from .models import Image
 
 # Create your views here
-
+@login_required(login_url='/login/')
 def add_infodata(request):
-    if request.method == 'POST':
-        form = InfodataForm(request.POST)
-        if form.is_valid():
-            infodata = form.save(commit=False)
-            infodata.created_by = request.user
-            infodata.save()
-            form.save()
-            return redirect('qabr') 
+    if not request.user.is_authenticated:
+        return render(request, 'login.html')
+    
     else:
-        form = InfodataForm()
-    return render(request, 'infodata.html', {'form':form})
+
+        if request.method == 'POST':
+            form = InfodataForm(request.POST)
+            if form.is_valid():
+                infodata = form.save(commit=False)
+                infodata.created_by = request.user
+                infodata.save()
+                form.save()
+                return redirect('qabr') 
+        else:
+            form = InfodataForm()
+        return render(request, 'infodata.html', {'form':form})
 
 # views.py
 

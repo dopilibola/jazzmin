@@ -4,8 +4,8 @@ from django.utils.html import format_html
 
 
 class InfodataAdmin(admin.ModelAdmin):
-    list_display = ('malumotnoma_num', 'ism_familiyasi_marhum', 'qarindoshligi', 'ism_familiyasi_ishonchlivakil', 'telefon_numeri', 'JSHSHIR_ishonch_vakil', 'created_by')
-    list_filter = ('telefon_numeri', 'ism_familiyasi_marhum')
+    list_display = ('idname', 'ism_familiyasi_marhum', 'yoshi', 'karta_number', 'qabr_soni', 'royhatga_olingan_joy', 'malumotnoma_num', 'uy_manzili', 'olim_sababi', 'qarindoshligi', 'ism_familiyasi_ishonchlivakil', 'telefon_numeri', 'gorkov_bilanmi', 'created_by')
+    list_filter = ('telefon_numeri', 'ism_familiyasi_marhum', 'created_by')
     readonly_fields = ('created_by',)  # 'created_by' maydoni faqat o'qilishi mumkin
 
     def save_model(self, request, obj, form, change):
