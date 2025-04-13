@@ -20,7 +20,7 @@
 
                         <li class="nav-item"><a class="nav-link" href="{%   url 'logout' %}">logout</a></li>  
 
-                        <li class="nav-item"><a class="nav-link" href="{%   url 'profile' %}">profile</a></li> 
+                        {% comment %} <li class="nav-item"><a class="nav-link" href="{%   url 'profile' %}">profile</a></li>  {% endcomment %}
                 
                     {% else %}  
                         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

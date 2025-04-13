@@ -41,7 +41,7 @@ class ImageAdmin(admin.ModelAdmin):
             '<a class="button" href="{url}" target="_blank">Rasmni ko\'rish</a>',
             url=obj.image.url  # Rasmga to'liq URL
         )
-    view_image_button.short_description = 'Rasmni ko\'rish'  # Tugmaning nomi
+    view_image_button.short_description = 'Rasmni korish'  # Tugmaning nomi
 
 
 
