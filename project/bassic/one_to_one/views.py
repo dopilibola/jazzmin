@@ -18,7 +18,7 @@ def add_infodata(request):
                 infodata.created_by = request.user
                 infodata.save()
                 form.save()
-                return redirect('qabr') 
+                return redirect('contact_success') 
         else:
             form = InfodataForm()
         return render(request, 'infodata.html', {'form':form})
@@ -52,6 +52,7 @@ def upload_image(request):
         form = ImageForm()
     return render(request, 'upload_image.html', {'form': form})
 
+# Rasm ro'yxatini ko'rsatish
 def image_list(request):
     images = Image.objects.all()
     return render(request, 'image_list.html', {'images': images})

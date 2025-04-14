@@ -13,6 +13,8 @@ class InfodataAdmin(admin.ModelAdmin):
             obj.created_by = request.user  # Agar 'created_by' maydoni bo'sh bo'lsa, joriy foydalanuvchini saqlash
         super().save_model(request, obj, form, change)
 
+
+
 class QabristonAdmin(admin.ModelAdmin):
     list_display = ('karta_number', 'qator', 'qabr_soni', 'created_by')  # 'qabr_son' emas, 'qabr_soni' ishlatish kerak
     readonly_fields = ('created_by',)  # 'created_by' maydoni faqat o'qilishi mumkin
@@ -28,7 +30,11 @@ class QabristonAdmin(admin.ModelAdmin):
 
 class ImageAdmin(admin.ModelAdmin):
     readonly_fields = ('created_by',)
-    list_display = ('image', 'description', 'view_image_button', 'created_by')
+    list_display = ('image', 'malumotnoma_nomeri', 'view_image_button', 'created_by')
+    list_filter = ('malumotnoma_nomeri', 'created_by')
+    search_fields = ('malumotnoma_nomeri',)  # Qidirish maydoni
+    ordering = ('-id',)  # So'nggi qo'shilgan rasmni birinchi o'rinda ko'rsatish
+
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by:
@@ -48,4 +54,4 @@ class ImageAdmin(admin.ModelAdmin):
 
 admin.site.register(Image, ImageAdmin)  
 admin.site.register(Infodata, InfodataAdmin)
-admin.site.register(Qabriston, QabristonAdmin)
+# admin.site.register(Qabriston, QabristonAdmin)
