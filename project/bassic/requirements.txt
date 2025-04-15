@@ -3,7 +3,7 @@ asgiref==3.8.1
 attrs==23.2.0
 autocommand==2.2.2
 Babel==2.14.0
-bcc==0.30.0
+# bcc==0.30.0
 beautifulsoup4==4.13.3
 blinker==1.8.2
 Brlapi==0.8.5
