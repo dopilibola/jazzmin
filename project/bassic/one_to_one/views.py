@@ -3,10 +3,12 @@ from django.shortcuts import render, redirect
 from .forms import InfodataForm, QabristonForm, ImageForm
 from .models import Image
 import requests
+from decouple import config
 
-BOT_TOKEN = '7655485724:AAGERQEXt2IEIcvLU9iSh39ILIR1ONu-0aM'
-CHAT_ID = '7150214500'
-
+# BOT_TOKEN = '7655485724:AAGERQEXt2IEIcvLU9iSh39ILIR1ONu-0aM'
+# CHAT_ID = '7150214500'
+BOT_TOKEN = config('BOT_TOKEN')
+CHAT_ID = config('CHAT_ID')
 # Create your views here
 # @login_required(login_url='/login/')
 # def add_infodata(request):
