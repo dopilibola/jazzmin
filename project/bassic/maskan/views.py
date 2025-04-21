@@ -57,7 +57,7 @@ def register_user(request):
             user = authenticate(username=username, password=password)
             login(request, user)
             messages.success(request, ('Username Creted - plesse fill out your user info below...'))
-            return redirect('update_info')
+            return redirect('login')
         else:
             messages.error(request, ('Registration failed. Please try again.'))
             return redirect('register')
