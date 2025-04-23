@@ -1,23 +1,23 @@
-# Python image asosida
+# Python imijidan foydalanamiz
 FROM python:3.10
 
+WORKDIR /bassic
 
-WORKDIR /app
-
-# Requirements ishlatadi 
+# requirements.txt faylini ko‘chirib, kerakli kutubxonalarni o‘rnatamiz
 COPY requirements.txt .
 
-# requ file yordam beradi 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# hammasini ochadi 
+# Hammasini ko‘chirib olish
 COPY . .
 
-# Port ochadi 
+# start.sh faylini bajarish huquqi beramiz
+RUN chmod +x start.sh
+
+
+# EntryPointni sozlash
+ENTRYPOINT ["./start.sh"]
+
 EXPOSE 8000
-
-# Django serverni ishlatadi 
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
-# CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
-
+# Agar start.sh fayli to‘g‘ri bajarilsa, Django serverni ishga tushiradi
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

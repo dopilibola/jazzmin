@@ -13,7 +13,8 @@
                         
                         {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li> {% endcomment %}
                         
-                {% if user.is_authenticated %}
+                    
+                    {% if user.is_authenticated %}
 
                        
                         <li class="nav-item"><a class="nav-link" href="{%   url 'update_password' %}">parolni yangilash </a></li>
@@ -27,7 +28,7 @@
 
                         <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">ro'yhatdan o'tish</a></li>
   
-                {% endif %}
+                    {% endif %}
 
                 </div>
             </div>
