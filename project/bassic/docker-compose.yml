@@ -11,8 +11,13 @@ services:
       - .env
     depends_on:
       - db
+<<<<<<< HEAD
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     # command: gunicorn project.wsgi:application --bind 0.0.0.0:8000
+=======
+    # command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: gunicorn project.wsgi:application --bind 0.0.0.0:8000
+>>>>>>> origin/main
   db:
     image: postgres:13
     volumes:
@@ -24,6 +29,7 @@ services:
     ports:
       - "5432:5432"
 # nginx service mas-kan.uz
+<<<<<<< HEAD
 #   nginx:
 #     image: nginx:latest
 #     ports:
@@ -32,7 +38,21 @@ services:
 #       - ./nginx/conf.d:/etc/nginx/conf.d
 #     depends_on:
 #       - web
+=======
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - web
+>>>>>>> origin/main
 
 volumes:
   postgres_data:
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
