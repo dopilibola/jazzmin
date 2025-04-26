@@ -20,4 +20,6 @@ ENTRYPOINT ["./start.sh"]
 
 EXPOSE 8000
 # Agar start.sh fayli to‘g‘ri bajarilsa, Django serverni ishga tushiradi
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+CMD ["gunicorn", "project.wsgi:application", "--bind", "0.0.0.0:8000"]
