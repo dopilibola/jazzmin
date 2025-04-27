@@ -2,15 +2,15 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
-ALLOWED_HOSTS = []
-# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 
 
 # SECRET_KEY = os.getenv('SECRET_KEY')
@@ -60,7 +60,8 @@ ROOT_URLCONF = 'bassic.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
