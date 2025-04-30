@@ -1,27 +1,28 @@
-# Python imijidan foydalanamiz
-FROM python:3.10
+# Use an official Python runtime as the base image
+FROM python:3.12.2-slim-bullseye
 
-WORKDIR /bassic
+# Set the working directory inside the container
+WORKDIR /app
 
-# requirements.txt faylini ko‘chirib, kerakli kutubxonalarni o‘rnatamiz
+RUN apt-get update && apt-get install -y \
+    libpq-dev gcc
+
+
+# Copy the requirements file and install dependencies
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Hammasini ko‘chirib olish
+# Copy the rest of the project code
 COPY . .
 
-# start.sh faylini bajarish huquqi beramiz
 RUN chmod +x start.sh
 
 
 # EntryPointni sozlash
 ENTRYPOINT ["./start.sh"]
-
+# Expose the default Django port
 EXPOSE 8000
-# Agar start.sh fayli to‘g‘ri bajarilsa, Django serverni ishga tushiradi
+
+# Run Django's development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
-# CMD ["gunicorn", "project.wsgi:application", "--bind", "0.0.0.0:8000"]
-
 
