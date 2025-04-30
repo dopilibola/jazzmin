@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Qabriston</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+    <div class="card shadow" style="width: 100%; max-width: 500px;">
+        <div class="card-header bg-primary text-white">
+            <h3 class="text-center">Eski qabirni ustiga ko'milgan bo'lsa</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-center text-muted">
+                Agar yuqoridagi holatga duch kelgan bo'lsangiz, iltimos, quyidagi formani to'ldiring.
+            </p>
+            <h2>Agar qabristonda joy bo'lmasa shu qatorni to'ldiring    </h2>
+            <a href="{% url 'qabr' %}"><button>Yes</button></a>
+            <a href="{% url 'contact_success' %}"><button>No</button></a>
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary btn-block">Saqlash</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

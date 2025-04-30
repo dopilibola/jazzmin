@@ -1,0 +1,270 @@
+    {% comment %} <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Rasm yuklash</title>
+    </head>
+    <body>
+        <h1>Rasm yuklash</h1>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Yuklash</button>
+        </form>
+    </body>
+    </html> {% endcomment %}
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Rasm yuklash</title>
+        <style>
+            :root {
+                --primary: #4361ee;
+                --primary-hover: #3a56d4;
+                --background: #f8f9fa;
+                --card-bg: #ffffff;
+                --text: #2b2d42;
+                --light-text: #6c757d;
+                --border: #e9ecef;
+                --error: #e63946;
+            }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--background);
+                color: var(--text);
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+            
+            .upload-container {
+                background-color: var(--card-bg);
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                padding: 2.5rem;
+                width: 100%;
+                max-width: 500px;
+                margin: 2rem;
+                animation: fadeIn 0.5s ease-out;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            h1 {
+                text-align: center;
+                margin-bottom: 1.8rem;
+                color: var(--primary);
+                font-size: 1.8rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .upload-form {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .form-group label {
+                font-weight: 500;
+                color: var(--text);
+            }
+            
+            .form-control {
+                padding: 0.8rem 1rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                font-family: inherit;
+                font-size: 1rem;
+                transition: all 0.3s;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            }
+            
+            textarea.form-control {
+                min-height: 100px;
+                resize: vertical;
+            }
+            
+            .file-input-container {
+                position: relative;
+                overflow: hidden;
+                display: inline-block;
+                width: 100%;
+            }
+            
+            .file-input-label {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 2rem;
+                border: 2px dashed var(--border);
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s;
+                text-align: center;
+                background-color: rgba(67, 97, 238, 0.02);
+            }
+            
+            .file-input-label:hover {
+                border-color: var(--primary);
+                background-color: rgba(67, 97, 238, 0.05);
+            }
+            
+            .file-input-label i {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+            
+            .file-input-label span {
+                color: var(--light-text);
+                font-size: 0.9rem;
+            }
+            
+            .file-input {
+                position: absolute;
+                left: 0;
+                top: 0;
+                opacity: 0;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+            }
+            
+            .submit-btn {
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                padding: 0.8rem 1rem;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s;
+                margin-top: 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .submit-btn:hover {
+                background-color: var(--primary-hover);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            .submit-btn:active {
+                transform: translateY(0);
+            }
+            
+            .error-message {
+                color: var(--error);
+                font-size: 0.8rem;
+                margin-top: 0.25rem;
+            }
+            
+            @media (max-width: 600px) {
+                .upload-container {
+                    padding: 1.5rem;
+                    margin: 1rem;
+                }
+                
+                h1 {
+                    font-size: 1.5rem;
+                }
+            }
+        </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
+    <body>
+        <div class="upload-container">
+            <h1><i class="fas fa-cloud-upload-alt"></i> Rasm yuklash</h1>
+            <form method="POST" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                
+                <!-- Description Field - Now Working Properly -->
+                <div class="form-group">
+                    <label for="id_description">Tavsif:</label>
+                    <textarea 
+                        name="description" 
+                        id="id_description" 
+                        class="form-control" 
+                        placeholder="Ma'lumotnomani no'merini yozing..."
+                    >{% if form.description.value %}{{ form.description.value }}{% endif %}</textarea>
+                    {% if form.description.errors %}
+                        <div class="error-message">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Image Upload Field -->
+                <div class="form-group">
+                    <label>Rasm:</label>
+                    <div class="file-input-container">
+                        <label class="file-input-label">
+                            <i class="fas fa-image"></i>
+                            <span>Rasmni tanlash uchun bosing yoki sudrab oling</span>
+                            <input 
+                                type="file" 
+                                name="image" 
+                                id="id_image" 
+                                class="file-input" 
+                                accept="image/*"
+                                required
+                            >
+                        </label>
+                    </div>
+                    {% if form.image.errors %}
+                        <div class="error-message">{{ form.image.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-upload"></i> Yuklash
+                </button>
+            </form>
+        </div>
+    
+        <script>
+            // Enhance file input display
+            const fileInput = document.getElementById('id_image');
+            const fileInputLabel = document.querySelector('.file-input-label span');
+            
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    fileInputLabel.textContent = this.files[0].name;
+                    fileInputLabel.style.color = '#4361ee';
+                    fileInputLabel.style.fontWeight = '500';
+                }
+            });
+        </script>
+    </body>
+    </html>
