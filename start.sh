@@ -12,6 +12,9 @@ echo "makemigrations."
 python manage.py migrate
 echo "migrate."
 
+python manage.py collectstatic
+echo "static file done "
+
 # Superuser yaratish (agar mavjud bo'lmasa)
 python manage.py shell << END
 from django.contrib.auth import get_user_model
