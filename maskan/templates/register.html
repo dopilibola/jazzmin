@@ -1,0 +1,39 @@
+{% extends 'base.html'%}
+{% block content %}
+
+    <header class="bg-dark text-white py-5">
+        <div class="container px-4 px-lg-5">
+            <div class="text-center text-uppercase">
+                <h1 class="mb-4">Ro'yhatdan o'tish  ...</h1>
+                <p class="lead">Ro'yhatdan o'tish uchun to'ldiring ...</p>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="row">
+            
+                <div class="col-md-6 offset-mb-3">
+                    <br/><br>
+                    <form method="POST" actions="{% url 'register' %}">
+                            {% csrf_token %}
+
+                            {{ form.as_p  }}
+                            <br/><br/>
+                            <button type="submit" class="btn btn-secondary">Register</button>
+                        
+                    </form>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+                </div>
+           
+        </div>
+    </div>
+
+
+{% endblock %}
