@@ -1,0 +1,114 @@
+{% comment %} <!DOCTYPE html>
+<html>
+<head>
+    <title>Ma'lumotlar jonatildi </title>
+</head>
+<body>
+    <p>
+        Marhumning ma'lumotlari to'ldirildi. 
+
+        Marhumning yaqiniga o'z taziyamizni bildiramiz 
+
+        Go'rko'v ma'lumotlari sms tarzda tez orada  yuboriladi. 
+         
+
+    </p>
+    <br><br>
+    <a href="{% url 'home' %}">Bosh oynaga qaytish   </a>
+    <br><br>
+    <a href="{% url 'upload_image' %}"> rasm jonatish  </a>
+    <br><br>
+    <a href="{% url 'image_list' %}">jonitilgan rasmlar  !!! </a>
+    <br><br>
+
+
+</body>
+</html> 
+ {% endcomment %}
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Ma'lumotlar jonatildi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        p {
+            margin-bottom: 25px;
+            font-size: 16px;
+            text-align: center;
+            white-space: pre-line;
+        }
+        
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #4a6fa5;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-black {
+            background-color: #333333;
+        }
+        
+        .btn-black:hover {
+            background-color: #222222;
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>
+            Marhumning ma'lumotlari to'ldirildi ma'lumotnomani rasmini yuboring . 
+
+            Marhumning yaqiniga o'z taziyamizni bildiramiz 
+            
+            Go'rko'v ma'lumotlari SMS tarzda tez orada yuboriladi.
+        </p>
+        
+        <div class="btn-container">
+            <a href="{% url 'home' %}" class="btn">Bosh oynaga qaytish</a>
+            <a href="{% url 'upload_image' %}" class="btn btn-black">Rasm jonatish</a>
+            <a href="{% url 'image_list' %}" class="btn btn-success">Jonatilgan rasmlar</a>
+        </div>
+    </div>
+</body>
+</html>

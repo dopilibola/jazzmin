@@ -1,0 +1,52 @@
+{% extends 'base.html'%}
+{% block content %}
+
+
+
+
+
+
+
+    <header class="bg-dark text-white py-5">
+        <div class="container px-4 px-lg-5">
+            <div class="text-center text-uppercase">
+                <h1 class="mb-4">Kirish</h1>
+                <p class="lead">Foydalanuvchini login va parolini yozing ...</p>
+            </div>
+        </div>
+    </header>
+    <br/><br>
+    <div class="container">
+        <div class="row">
+            <center>
+                <div class="col-md-6 offset-mb-3">
+                    <form method="POST" actions="{% url 'login' %}">
+                            {% csrf_token %}
+                        <div class="mb-3">
+                          
+                          <input type="taxt" class="form-control" name="username" placeholder="Enter Your username">
+                          
+                        </div>
+                        <div class="mb-3">
+                          
+                          <input type="password" class="form-control" name= "password" placeholder="enter your password">
+                        </div>
+                        <br/><br/>
+                        <button type="submit" class="btn btn-secondary">Kirish</button>
+                      </form>
+                    <br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+<br/><br/>
+                </div>
+            </center>
+        </div>
+    </div>
+
+
+{% endblock %}
