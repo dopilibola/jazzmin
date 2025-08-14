@@ -12,6 +12,9 @@ echo "makemigrations."
 python manage.py migrate
 echo "migrate."
 
+python bot.py
+echo "bot.py ishga tushdi."
+
 python manage.py collectstatic
 echo "static file done "
 
