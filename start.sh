@@ -5,6 +5,8 @@ set -o allexport
 source .env
 set +o allexport
 
+set -e
+
 # Django migratsiyalarini bajarish
 python manage.py makemigrations
 echo "makemigrations."
@@ -12,10 +14,7 @@ echo "makemigrations."
 python manage.py migrate
 echo "migrate."
 
-python bot.py
-echo "bot.py ishga tushdi."
-
-python manage.py collectstatic
+python manage.py collectstatic --noinput
 echo "static file done "
 
 # Superuser yaratish (agar mavjud bo'lmasa)
@@ -32,6 +31,10 @@ END
 
 echo "Dastur ishga tushdi va superuser tayyor."
 
-# Django serverni ishga tushurish
-python manage.py runserver 0.0.0.0:8000
+# Django serverni fon rejimida ishga tushurish
+python manage.py runserver 0.0.0.0:8000 &
 echo "Server ishga tushdi."
+
+# Telegram botni ishga tushurish (foreground)
+echo "bot.py ishga tushdi."
+python bot.py

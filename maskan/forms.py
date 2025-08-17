@@ -1,62 +1,73 @@
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm, SetPasswordForm
 from django import forms
-from .models import Profile
-
-class SignUpForm(UserCreationForm):
-	email = forms.EmailField(label="", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'Email Address'}))
-	first_name = forms.CharField(label="", max_length=100, widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'First Name'}))
-	last_name = forms.CharField(label="", max_length=100, widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'Last Name'}))
-
-	class Meta:
-		model = User
-		fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')
-
-	def __init__(self, *args, **kwargs):
-		super(SignUpForm, self).__init__(*args, **kwargs)
-
-		self.fields['username'].widget.attrs['class'] = 'form-control'
-		self.fields['username'].widget.attrs['placeholder'] = 'User Name'
-		self.fields['username'].label = ''
-		self.fields['username'].help_text = '<span class="form-text text-muted"><small>Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</small></span>'
-
-		self.fields['password1'].widget.attrs['class'] = 'form-control'
-		self.fields['password1'].widget.attrs['placeholder'] = 'Password'
-		self.fields['password1'].label = ''
-		self.fields['password1'].help_text = '<ul class="form-text text-muted small"><li>Your password can\'t be too similar to your other personal information.</li><li>Your password must contain at least 8 characters.</li><li>Your password can\'t be a commonly used password.</li><li>Your password can\'t be entirely numeric.</li></ul>'
-
-		self.fields['password2'].widget.attrs['class'] = 'form-control'
-		self.fields['password2'].widget.attrs['placeholder'] = 'Confirm Password'
-		self.fields['password2'].label = ''
-		self.fields['password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'
+from django.contrib.auth.models import User
+from .models import Qabristonmap, Qabristonmap_image
 
 
 
-class ChangePasswordForm(SetPasswordForm):
-	class Meta:
-		model = User
-		fields = ['new_password1', 'new_password2' ]
+class RegisterPhoneForm(forms.Form):
+    phone_number = forms.CharField(max_length=15)
 
-	def __init__(self, *args, **kwargs):
-		super(ChangePasswordForm, self).__init__(*args, **kwargs)
+class VerifyCodeForm(forms.Form):
+    phone_number = forms.CharField(max_length=15)
+    code = forms.CharField(max_length=4)
 
-		self.fields['new_password1'].widget.attrs['class'] = 'form-control'
-		self.fields['new_password1'].widget.attrs['placeholder'] = 'Password'
-		self.fields['new_password1'].label = ''
-		self.fields['new_password1'].help_text = '<ul class="form-text text-muted small"><li>Your password can\'t be too similar to your other personal information.</li><li>Your password must contain at least 8 characters.</li><li>Your password can\'t be a commonly used password.</li><li>Your password can\'t be entirely numeric.</li></ul>'
-
-		self.fields['new_password2'].widget.attrs['class'] = 'form-control'
-		self.fields['new_password2'].widget.attrs['placeholder'] = 'Confirm Password'
-		self.fields['new_password2'].label = ''
-		self.fields['new_password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'
+class SetPasswordForm(forms.Form):
+    password = forms.CharField(widget=forms.PasswordInput, min_length=6)
 
 
-# profile  
-class ProfileForm(forms.ModelForm):
+
+
+class RegisterForm(forms.ModelForm):
+    # Parol kamida 6 belgidan iborat bo‘lishi kerak
+    password = forms.CharField(widget=forms.PasswordInput, min_length=6)
     class Meta:
-        model = Profile
-        fields = ['full_name', 'job', 'image']
+        model = User
+        fields = ['username', 'password']
 
-# maskan/forms.py
+class LoginForm(forms.Form):
+    # Kirish uchun login va parol
+    username = forms.CharField()
+    password = forms.CharField(widget=forms.PasswordInput)
 
-# maskan/forms.py
+class ForgotPasswordForm(forms.Form):
+    # Parolni tiklash uchun telefon raqami
+    phone_number = forms.CharField()
+
+class ResetPasswordForm(forms.Form):
+    # Yangi parol (kamida 6 belgi)
+    password = forms.CharField(widget=forms.PasswordInput, min_length=6)
+
+
+
+class QabristonmapForm(forms.ModelForm):
+    class Meta:
+        model = Qabristonmap
+        # product foydalanuvchi tomonidan tanlanmaydi — view'da avtomatik biriktiramiz
+        fields = [
+            "ism_familiyasi_marhum",
+            "years_old",
+            "years_new",
+            "qator",
+            "qabr_soni",
+            "status",
+        ]
+
+class QabristonmapImageForm(forms.ModelForm):
+    class Meta:
+        model = Qabristonmap_image
+        fields = ["product", "image"]  # 'product' bu yerda Qabristonmap FK (tanlash uchun)
+        widgets = {
+            "image": forms.ClearableFileInput(attrs={"accept": "image/*"})
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        # Faqat userga ruxsat berilgan Product ichidagi Qabristonmaplar ro'yxatini ko'rsatamiz
+        if user and hasattr(user, "profile") and user.profile.product:
+            self.fields["product"].queryset = Qabristonmap.objects.filter(
+                product=user.profile.product
+            )
+        else:
+            # Hech narsa ko'rsatmaymiz — ruxsat yo'q
+            self.fields["product"].queryset = Qabristonmap.objects.none()

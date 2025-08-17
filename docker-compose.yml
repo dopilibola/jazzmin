@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     build: .
@@ -11,8 +9,6 @@ services:
       - .env
     depends_on:
       - db
-    command: python manage.py runserver 0.0.0.0:8000
-
   db:
     image: postgres:15
     env_file:

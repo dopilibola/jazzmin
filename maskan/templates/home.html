@@ -1,181 +1,256 @@
-
-{%  extends 'base.html' %}
-
-{% load static %}
-
-
-
+{% extends 'base.html' %}  {# Asosiy sahifa shablonini kengaytiradi #}
+{% load static %}          {# static fayllarni (CSS, rasm va h.k.) yuklash uchun #}
 
 {% block content %}
+<style>
+  /* Detallar tugmasi uchun maxsus dizayn */
+  .custom-detail-btn {
+    background-color: #000;
+    color: #fff;
+    border: 2px solid #000;
+    border-radius: 50px;
+    padding: 10px 28px;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+    text-decoration: none;
+  }
 
-<link href="{% static 'css/home.css' %}" rel="stylesheet" />
-         <!--header-->
-            {% comment %} <header class="p-3 mb-2 bg-primary text-white">
-                <div class="container px-3 px-lg-5">
-                    <div class="text-center text-uppercase">
-                        <h1 class="mb-4">Maskan</h1>
-                        <p class="lead">mushkulini oson qilamiz</p>
-                    </div>
-                </div>
-            </header> {% endcomment %}
+  /* Tugma ustiga olib borilganda dizayn */
+  .custom-detail-btn:hover {
+    background-color: #fff;
+    color: #000;
+    border-color: #000;
+    transform: scale(1.05);
+  }
 
+  /* Tugma bosilganda dizayn */
+  .custom-detail-btn:active {
+    background-color: #222;
+    color: #fff;
+    transform: scale(0.98);
+  }
 
+  /* Har bir mahsulot uchun karta dizayni */
+  .custom-card {
+    border-radius: 1rem;
+    transition: transform .3s, box-shadow .3s;
+    overflow: hidden;
+  }
 
-            <header class="p-3 mb-2 bg-primary text-white">
-                <div class="container d-flex align-items-center justify-content-between px-3 px-lg-5">
-                    <!-- Logotip joyi -->
-                    <div class="logo">
-                        <img src="{% static 'assets/maskan.ico' %}" alt="Logo" style="max-width: 100px;">
-                    </div>
-                    
-                    <!-- Matn joyi -->
-                    <div class="text-end text-uppercase">
-                        <h1 class="mb-4" style="font-family: 'Georgia', serif; font-size: 2.5rem;">Maskan</h1>
-                        <p class="lead" style="font-family: 'Arial', sans-serif;">Mushkulini oson qilamiz</p>
-                    </div>
-                </div>
-            </header>
-            
-            <style>
-            /* Matnni o'ng tomonga joylash uchun va logotip bilan ajratish uchun */
-            header .logo {
-                flex-shrink: 0; /* Logotip o'z o'lchamida qolsin */
-            }
-            header .text-end {
-                flex-grow: 1; /* Matn maydoni kengaytiriladi */
-            }
-            header .container {
-                display: flex;
-                align-items: center; /* Vertikal markazlashtirish */
-                justify-content: space-between; /* Logotip va matn orasini ajratish */
-            }
-            </style>
-            
-            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'add_infodata' %}">o'likni ro'yhatga olish </a></li>  {% endcomment %}
-            {% comment %} <li class="nav-item">
-                <a class="nav-link custom-button" href="{% url 'add_infodata' %}">
-                    <div class="icon-container">
-                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
-                    </div>
-                    O'likni ro'yhatga olish
-                </a>
-            </li> {% endcomment %}
-{% comment %}             
-            <li class="nav-item">
-                <a class="nav-link custom-button" href="{% url 'home_selle' %}">
-                    <div class="icon-container">
-                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
-                    </div>
-                    Qabristonda joy sotib olish 
-                </a>
-            </li> {% endcomment %}
+  .custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, .15);
+  }
 
+  /* Karta ichidagi rasmga maxsus o‘lcham va uslub */
+  .custom-img {
+    height: 250px;
+    object-fit: cover;
+    cursor: pointer;
+  }
 
-{% comment %} 
-            <li class="nav-item">
-                <a class="nav-link custom-button" href="{% url 'ulganlik' %}">
-                    <div class="icon-container">
-                        <img src="{% static 'assets/maskan.ico' %}" alt="icon" class="button-icon">
-                    </div>
-                    O'lganlik uchun pul to'lab berish
-                </a>
-            </li> {% endcomment %}
+  /* Mobil versiya uchun rasm o‘lchami */
+  @media (max-width: 768px) {
+    .custom-img { height: 180px; }
+  }
 
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Bootstrap Tugmachalar</title>
-                <!-- Bootstrap CSS -->
-                <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    .custom-button {
-                        width: 200px; /* Tugmachaning kengligi */
-                        height: 80px; /* Tugmachaning balandligi */
-                        display: flex; /* Matnni joylash uchun flexbox */
-                        justify-content: center; /* Matnni gorizontal markazlash */
-                        align-items: center; /* Matnni vertikal markazlash */
-                        text-align: center;
-                        background-color: white; /* Tugmachaning rangi */
-                        border: 2px solid black; /* Tugmachaning chet rangi */
-                        border-radius: 8px; /* Tugmachaning burchaklarini yumaloq qilish */
-                        color: #000;
-                        font-weight: bold;
-                        font-size: 18px;
-                        transition: background-color 0.3s ease, transform 0.2s ease;
-                        padding: 10px; /* Matn va chetlar orasidagi bo‘shliq */
-                        box-sizing: border-box; /* Padding tugmachaning o‘lchamiga ta’sir qilmasligi uchun */
-                    }
-                    
-            
-                    .custom-button:hover {
-                        background-color: #1E90FF; /* Hoverdagi rangi */
-                        color: #fff; /* Hoverdagi matn rangi */
-                        transform: scale(1.45); /* Tugmachani kattalashtirish */
-                    }
-            
-                    .button-icon {
-                        width: 60px;
-                        height: 60px;
-                        display: block;
-                        margin: 0 auto; /* Ikonkani markazlashtirish */
-                        margin-bottom: 10px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container my-5">
-                    <div class="row text-center justify-content-between">
-                        <div class="col-md-4 mb-3">
-                            <a href="{% url 'add_infodata' %}" class="custom-button d-block">
-                                <img src="{% static 'assets/maskan.ico' %}" alt="Icon 1" class="button-icon">
-                                Ro'yhatga olish 
-                            </a>
-                        </div>
-                        {% comment %} <div class="col-md-4 mb-3">
-                            <a href="{% url 'home_selle' %}" class="custom-button d-block">
-                                <img src="{% static 'icons/document-icon2.png' %}" alt="Icon 2" class="button-icon">
-                                Qabristonda 
-                            </a>
-                        </div> {% endcomment %}
-                        {% comment %} <div class="col-md-4 mb-3">
-                            <a href="{% url 'ulganlik' %}" class="custom-button d-block">
-                                <img src="{% static 'assets/xazna.ico' %}" alt="Icon 3" class="button-icon">
-                                Dafn pulini olish 
-                            </a>
-                        </div> {% endcomment %}
-                    </div>
-                </div>
-            
-                <!-- Bootstrap JS -->
-                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-            </body>
-            </html>
-            
+  /* Qidiruv tugmasi uchun dizayn */
+  .custom-search-btn {
+    background-color: #000;
+    color: #fff;
+    border: 2px solid #000;
+    border-radius: 50px;
+    padding: 10px 28px;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+  }
 
+  .custom-search-btn:hover {
+    background-color: #fff;
+    color: #000;
+    border-color: #000;
+    transform: scale(1.05);
+  }
 
+  .custom-search-btn:active {
+    background-color: #222;
+    color: #fff;
+    transform: scale(0.98);
+  }
 
+  /* Modal rasm oynasi uchun dizayn */
+  .img-modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    padding-top: 60px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.9);
+  }
 
+  .img-modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 80vh;
+    border-radius: 10px;
+  }
 
+  .img-modal-close {
+    position: absolute;
+    top: 25px;
+    right: 45px;
+    color: #fff;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+</style>
 
+<!-- Rasmni kattalashtirib ko‘rsatadigan MODAL oyna -->
+<div id="imgModal" class="img-modal">
+  <span class="img-modal-close" onclick="closeModal()">&times;</span>
+  <img class="img-modal-content" id="modalImg">
+</div>
 
+<section class="py-5">
+  <div class="container">
 
+    <!-- Qidiruv formasi -->
+    <div class="row mb-4">
+      <div class="col-md-8 mx-auto">
+        <form method="POST" action="{% url 'home' %}">
+          {% csrf_token %}  {# Xavfsizlik tokeni #}
+          <div class="input-group">
+            <input type="text"
+                   class="form-control form-control-lg"
+                   name="searched"
+                   placeholder="Qabristonni qidirish"
+                   value="{{ query|default:'' }}">
+            <button type="submit" class="custom-search-btn">Qidirish</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
+    {# Agar qidiruv natijalari mavjud bo‘lsa #}
+    {% if searched_products %}
+      <h4 class="mb-4">Qidiruv natijalari:</h4>
+      <div class="row gx-4 gy-5 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
+        {% for product in searched_products %}
+          <div class="col">
+            <div class="card custom-card h-100 shadow-sm">
+              
+              {# Rasm mavjud bo‘lsa – birinchi rasmini ko‘rsatadi #}
+              {% if product.images.all %}
+                <img src="{{ product.images.all.0.image.url }}"
+                     class="card-img-top custom-img"
+                     alt="{{ product.name }}"
+                     onclick="showModal(this)">
+              {% else %}
+                <img src="{% static 'logo.jpg' %}"
+                     class="card-img-top custom-img"
+                     alt="No image"
+                     onclick="showModal(this)">
+              {% endif %}
 
-            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'home_selle' %}">Qabristonda joy sotib olish  </a></li>  {% endcomment %}
+              <div class="card-body text-center d-flex flex-column">
+                <h5 class="card-title text-uppercase">{{ product.name }}</h5>
+                <p class="mt-auto"><strong>{{ product.price }}</strong></p>
+                <p class="text-muted">{{ product.category }}</p>
+              </div>
 
-            {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'ulganlik' %}">O'lganlik uchun pul to'lab berish   </a></li>  {% endcomment %}
+              <div class="card-footer bg-white text-center border-0">
+                <a href="{% url 'product' product.id %}" class="btn btn-dark w-75">Batafsil</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
 
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
-<br><br/><br><br/><br><br/><br><br/>
+    {# Qidiruv bo‘lgan, lekin natija topilmagan bo‘lsa #}
+    {% elif query %}
+      <div class="alert alert-warning text-center mt-4">
+        "<strong>{{ query }}</strong>" Qabriston topilmadi.
+      </div>
+    {% endif %}
 
+    {# Umuman qidiruv bo‘lmasa – ya'ni sahifa ilk ochilgan holat #}
+    {% if not query %}
+      <h4 class="mb-4">Barcha qabristonlar:</h4>
+      <div class="row gx-4 gy-5 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
+        {% for product in products %}
+          <div class="col">
+            <div class="card custom-card h-100 shadow-sm">
 
+              {# Rasm mavjud yoki mavjud emasligiga qarab #}
+              {% if product.images.all %}
+                <img src="{{ product.images.all.0.image.url }}"
+                     class="card-img-top custom-img"
+                     alt="{{ product.name }}"
+                     onclick="showModal(this)">
+              {% else %}
+                <img src="{% static 'logo.jpg' %}"
+                     class="card-img-top custom-img"
+                     alt="No image"
+                     onclick="showModal(this)">
+              {% endif %}
 
-{% endblock%}
+              <div class="card-body text-center d-flex flex-column">
+                <h5 class="card-title text-uppercase">{{ product.name }}</h5>
+                <p class="mt-auto"><strong>{{ product.price }}</strong></p>
+                <p class="text-muted">{{ product.category }}</p>
+
+                {# Joylashuv (Google xarita orqali link) #}
+                {% if product.location %}
+                  <p class="text-muted">
+                    Joylashuv:
+                    <a href="https://www.google.com/maps?q={{ product.location.latitude }},{{ product.location.longitude }}"
+                      target="_blank"
+                      class="text-decoration-none">
+                      {{ product.location.name }}
+                    </a>
+                  </p>
+                {% endif %}
+              </div>
+
+              <div class="card-footer bg-white text-center border-0">
+                <a href="{% url 'product' product.id %}" class="btn custom-detail-btn w-75">Batafsil</a>
+              </div>
+
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Modal oynani ko‘rsatish va yopish uchun JS -->
+<script>
+  // Rasm ustiga bosilganda modalni ko‘rsatish
+  function showModal(img) {
+    var modal = document.getElementById("imgModal");
+    var modalImg = document.getElementById("modalImg");
+    modal.style.display = "block";
+    modalImg.src = img.src;
+  }
+
+  // Modalni yopish (× bosilganda)
+  function closeModal() {
+    document.getElementById("imgModal").style.display = "none";
+  }
+
+  // Modal tashqarisiga bosilganda yopiladi
+  window.onclick = function(event) {
+    var modal = document.getElementById("imgModal");
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+{% endblock %}

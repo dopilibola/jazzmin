@@ -1,0 +1,11 @@
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="phone" value="{{ request.GET.phone }}">
+  <label>Kodni kiriting:</label>
+  <input type="text" name="code" maxlength="6">
+
+  <label>Yangi parol:</label>
+  <input type="password" name="password">
+
+  <button type="submit">Tasdiqlash</button>
+</form>

@@ -1,0 +1,29 @@
+<!-- templates/qabristonmap/search.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2>Qabriston Qidiruv</h2>
+  <input type="text" id="searchInput" class="form-control" placeholder="Qidiruv...">
+  <div id="searchResults" class="mt-4"></div>
+</div>
+
+<script>
+  const input = document.getElementById('searchInput');
+  const resultsDiv = document.getElementById('searchResults');
+  input.addEventListener('input', function () {
+    const query = input.value;
+    fetch(`/maskan/qabristonmap/{{ pk }}/search/ajax/?query=` + query)
+      .then(res => res.json())
+      .then(data => {
+        resultsDiv.innerHTML = '';
+        if (data.length === 0) {
+          resultsDiv.innerHTML = '<p>Hech narsa topilmadi.</p>';
+        } else {
+          data.forEach(item => {
+            resultsDiv.innerHTML += `<div><strong>${item.ism_familiyasi_marhum}</strong> - ${item.years} (${item.qator}-qator, ${item.qabr_soni}-qabr)</div>`;
+          });
+        }
+      });
+  });
+</script>
+{% endblock %}

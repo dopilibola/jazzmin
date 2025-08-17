@@ -1,6 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import FileExtensionValidator
+
 
 # o'lgan odamni ma'lumotlari 
 class Infodata(models.Model):
@@ -17,7 +16,7 @@ class Infodata(models.Model):
     ism_familiyasi_ishonchlivakil = models.CharField(max_length=20, blank=True) 
     telefon_numeri = models.CharField(max_length=20, blank=True) #faqat nummer bo'lishi kerak 
     gorkov_bilanmi = models.CharField(max_length=20, blank=True) #tugmali 
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    # created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     
 
     def __str__(self):
@@ -30,7 +29,7 @@ class Qabriston(models.Model):
     qator =  models.CharField(max_length=20, blank=True)
     # qabr_son = models.CharField(max_length=20, blank=True)  # nomni 'qabr_soni' dan 'qabr_son'ga o'zgartirdim
     qabr_soni = models.CharField(max_length=20, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    # created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f'{self.karta_number} - {self.qator} {self.qabr_soni}'  # 'qabr_soni' ni 'qabr_son' ga o'zgartirdim
@@ -39,7 +38,6 @@ class Qabriston(models.Model):
 class Image(models.Model):
     image = models.ImageField(upload_to='media/hujjat/')  # Rasmni 'images/' papkaga saqlash
     malumotnoma_nomeri = models.CharField(max_length=255, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    # created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return self.malumotnoma_nomeri
-
