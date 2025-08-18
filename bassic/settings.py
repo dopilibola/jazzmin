@@ -11,6 +11,10 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+# CSRF_COOKIE_SECURE = True  # HTTPS bo'lsa True
+# CSRF_USE_SESSIONS = False  # Cookie orqali ishlatilsin
+# ALLOWED_HOSTS = ['your-domain.com']  # Domeningizni kiriting
+CSRF_TRUSTED_ORIGINS = ['https://mas-kan.uz']
 
 
 # SECRET_KEY = os.getenv('SECRET_KEY')

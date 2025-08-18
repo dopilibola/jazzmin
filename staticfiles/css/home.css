@@ -1,0 +1,36 @@
+/* Tugmachaning umumiy dizayni */
+.custom-button {
+    display: block; /* Tugmachani to'liq blok ko'rinishida qilish */
+    width: 200px; /* Tugmachaning eni */
+    height: 200px; /* Tugmachaning bo'yi */
+    padding: 10px;
+    background-color: #fff; /* Tugmachaning boshlang'ich rangi */
+    border: 2px solid #181817; /* Tugmacha chekkasiga chiziq qo'shish */
+    border-radius: 8px; /* Tugmachani ozgina yumaloq burchakli qilish */
+    color: #000;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    text-decoration: none;
+    line-height: 80px; /* Matnni tugmacha markaziga joylashtirish uchun */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Tugmachaning ustiga sichqoncha olib borganingizda */
+.custom-button:hover {
+    background-color: hsl(147, 100%, 31%); /* Tugmachaning o'zgaruvchi rangi */
+    color: #fff; /* Yozuv rangini oq qilish */
+    transform: scale(1.05); /* Tugmachani kattalashtirish */
+}
+
+/* Ikonka uslubi */
+.icon-container {
+    margin-bottom: 10px; /* Ikonka va matn orasidagi masofa */
+}
+
+.button-icon {
+    width: 40px; /* Ikonkaning eni */
+    height: 40px; /* Ikonkaning bo'yi */
+    display: block; /* Ikonkani alohida qatorda ko'rsatish */
+    margin: 0 auto; /* Ikonkani tugmacha markaziga joylash */
+}

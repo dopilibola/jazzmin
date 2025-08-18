@@ -1,16 +1,19 @@
 version: '3.8'
 
 services:
-  web:
+  jazzmin-web:
     build: .
     ports:
-      - "8000:8000"
+      - "8008:8000"
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
       - db
+    networks:
+      - intranet
+      - dressme_extranet
     command: python manage.py runserver 0.0.0.0:8000
 
   db:
@@ -19,6 +22,14 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - intranet
 
 volumes:
   postgres_data:
+
+networks:
+  intranet:
+    driver: bridge
+  dressme_extranet:
+    external: true
