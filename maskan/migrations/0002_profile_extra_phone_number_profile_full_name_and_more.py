@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
             name='extra_phone_number',
             field=models.CharField(blank=True, max_length=20),
         ),
-        migrations.AddField(
-            model_name='profile',
-            name='full_name',
-            field=models.CharField(blank=True, max_length=150),
-        ),
+        # migrations.AddField(
+        #     model_name='profile',
+        #     name='full_name',
+        #     field=models.CharField(blank=True, max_length=150),
+        # ),
         migrations.AddField(
             model_name='profile',
             name='home_address',
