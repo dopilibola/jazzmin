@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Qabriston Xarita</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      padding: 20px;
+    }
+
+    .row-label {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* Tomb-shaped grave marker */
+    .grave-square {
+      position: relative;
+      width: 80px;
+      height: 120px;
+      background-color: green; /* default, overridden by status classes */
+      cursor: pointer;
+      transition: transform 0.2s;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .grave-square::before {
+      content: "";
+      position: absolute;
+      top: -40px;       /* arch sits above the square */
+      left: 0;
+      width: 100%;
+      height: 80px;     /* height of the half-circle arch */
+      background: inherit;
+      /* half-circle at the top */
+      border-bottom-left-radius: 50% 100%;
+      border-bottom-right-radius: 50% 100%;
+    }
+
+    .grave-square:hover {
+      transform: scale(1.05);
+    }
+
+    /* Status colors */
+    .grave-square.green { background-color: #16a34a; }
+    .grave-square.yellow { background-color: #d97706; }
+    .grave-square.red { background-color: #dc2626; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .modal-content img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .close {
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+
+    .grave-info-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+      text-align: left;
+    }
+
+    .grave-info-box div {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .btn-edit {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background: #e5e7eb;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #kartaSelect {
+      margin-bottom: 20px;
+      padding: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Qabriston Xarita</h2>
+
+
+
+  <div id="grave-container">
+    {% for qator, qabrlar in grouped_qabrlar.items %}
+      <div class="row" data-qator="{{ qator }}">
+        <div class="row-label">Qator: {{ qator }}</div>
+        {% for qabr in qabrlar %}
+          <div class="grave-square {{ qabr.status }}"
+               data-karta="{{ qabr.karta_number }}"
+               onclick="showModal({{ qabr.id }})">
+            {{ qabr.qabr_soni }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% for qator, qabrlar in grouped_qabrlar.items %}
+    {% for qabr in qabrlar %}
+      <div class="modal" id="modal-{{ qabr.id }}">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal({{ qabr.id }})">&times;</span>
+          <h2>{{ qabr.ism_familiyasi_marhum }}</h2>
+          <p><em>{{ qabr.karta_number }}</em></p>
+
+          <div class="grave-info-box">
+            <div><strong>Yoshi:</strong><br>{{ qabr.years }}</div>
+            <div><strong>Tug‘ilgan:</strong><br>{{ qabr.years_new }}</div>
+            <div><strong>Vafot:</strong><br>{{ qabr.years_old }}</div>
+            <div><strong>Qator:</strong><br>{{ qabr.qator }}</div>
+            <div><strong>Qabr #:</strong><br>{{ qabr.qabr_soni }}</div>
+          </div>
+
+          {% for img in qabr.images.all %}
+            <img src="{{ img.image.url }}" alt="Qabr rasmi">
+          {% empty %}
+            <p>Rasm yo‘q</p>
+          {% endfor %}
+
+          <button class="btn-edit">✏️ Edit</button>
+        </div>
+      </div>
+    {% endfor %}
+  {% endfor %}
+
+  <script>
+    function showModal(id) {
+      document.getElementById('modal-' + id).style.display = 'block';
+    }
+    function closeModal(id) {
+      document.getElementById('modal-' + id).style.display = 'none';
+    }
+    window.onclick = function(event) {
+      document.querySelectorAll('.modal').forEach(modal => {
+        if (event.target === modal) modal.style.display = 'none';
+      });
+    };
+    function filterByKarta() {
+      const sel = document.getElementById('kartaSelect').value;
+      document.querySelectorAll('.grave-square').forEach(el => {
+        el.style.display = (sel==='all' || el.dataset.karta===sel) ? 'flex' : 'none';
+      });
+    }
+  </script>
+
+</body>
+</html>

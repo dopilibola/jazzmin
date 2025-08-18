@@ -1,0 +1,349 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maskan - Digital Grave Maintenance Services</title>
+    <meta name="description" content="Professional digital grave maintenance services for Muslim cemeteries">
+
+    <!-- Static CSS -->
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <!-- Static JS -->
+    <script src="{% static 'js/script.js' %}"></script>
+</head>
+
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+       <div class="nav-logo">
+            <a href="/">
+                <img src="{% static 'assets/logo2.png' %}" alt="Maskan Logo" style="height: 80px;">
+            </a>
+        </div>
+
+        <ul class="nav-menu">
+            <li><a href="#home">Bosh sahifa</a></li>
+            <li><a href="#how-it-works">Biz qanday ishlaymiz</a></li>
+            {% comment %} <li><a href="#pricing">Narxlar</a></li> {% endcomment %}
+            <li><a href="#testimonials">Mijozlar fikrlari</a></li>
+            <li><a href="#contact">Aloqa</a></li>
+
+            <li><a href="{% url 'login2'%}">Kirish</a></li>
+        </ul>
+        <div class="hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section id="home" class="hero" style="background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{% static "assets/hero-cemetery.jpg" %}') no-repeat center/cover;">
+    <div class="hero-content">
+        <h1 class="fade-in-up"></h1>
+        <p class="fade-in-up stagger-1">Maskan – Qabr tozalash, fotosuratlar bilan hisobot berish va arxivlash xizmatlarini bir joyda birlashtirgan raqamli platforma</p>
+        <div class="hero-buttons fade-in-up stagger-2">
+            <button class="btn-primary" id="scrollToContact">Buyurtma berish</button>
+            <button class="btn-secondary" onclick="document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' });">
+                Batafsil ma'lumot
+            </button>
+
+        </div>
+    </div>
+</section>
+
+<script>
+document.getElementById('scrollToContact').addEventListener('click', function () {
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+
+
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Biz qanday ishlaymiz</h2>
+            <p>Oddiy, hurmatli va ishonchli qabriston parvarishi to'rtta oson qadamda</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-icon">📝</div> <!-- oldingi 📥 -->
+                <h3>Qabr Ma'lumotlarini Taqdim Etish</h3>
+                <p>Qabr joylashuvi va tafsilotlarini bizning xavfsiz platformamiz orqali taqdim eting.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">🧹</div> <!-- oldingi 🧼 -->
+                <h3>Professional Tozalash</h3>
+                <p>Bizning malakali jamoamiz qabr joyini hurmat bilan tozalaydi va parvarish qiladi.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">📷</div> <!-- oldingi 📸 -->
+                <h3>Foto Hisobot</h3>
+                <p>O'tkazilgan parvarish ishlarini ko'rsatadigan batafsil fotosuratlarni oling.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">🗃️</div> <!-- oldingi 🗂️ -->
+                <h3>Raqamli Arxiv</h3>
+                <p>Sizning qabr joyingiz kelajakda murojaat qilish va kuzatish uchun raqamli ravishda qayd etiladi.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">🕌</div> <!-- Qabristonlar uchun mosroq -->
+                <div class="stat-number">109+</div>
+                <p>Qabristonlar xizmat ko'rsatildi</p>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🧹</div> <!-- Tozalashga mos -->
+                <div class="stat-number">120+</div>
+                <p>Qabr tozalandi</p>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🤝</div> <!-- Mijozlar, ishonch belgisi -->
+                <div class="stat-number">80+</div>
+                <p>Qoniqarli Mijozlar</p>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🗓️</div> <!-- Obuna/oylik xizmatga mos -->
+                <div class="stat-number">70+</div>
+                <p>Oylik Obunachilar</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Testimonials -->
+<section id="testimonials" class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Bizning Mijozlarimiz Nima Deydi</h2>
+            <p>O'zbekiston bo'ylab oilalar tomonidan ishonchli</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <p>"Maskan menga tinchlik berdi, chunki mening otamning qabrini men chet elda yashayotganimda to'g'ri parvarish qilinadi."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">A.A</div>
+                    <span>Abdumalik Akbarov</span>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p>"Ularning ishi va musulmon an'analariga hurmat bilan yondashuvi meni hayratda qoldirdi. Jamoa ishonchli va ularning ishlari a'lo darajada."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">F.Z</div>
+                    <span>Fatima Yusufxojayeva</span>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p>"Men ularning batafsil e'tiboriga va oylik hisobotlarining sifatiga hayratda qoldim."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">I.A</div>
+                    <span>Iskandar Abuqahorov</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing -->
+{% comment %} <section id="pricing" class="pricing-section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Rejangizni Tanlang</h2>
+            <p>Arzon va ishonchli qabr parvarish xizmatlari</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Oylik Reja</h3>
+                    <div class="price"><span class="amount">50,000</span> <span class="currency">UZS/oy</span></div>
+                </div>
+                <ul class="features-list">
+                    <li>✓ Oylik tozalash</li>
+                    <li>✓ Foto hujjatlash</li>
+                    <li>✓ WhatsApp yangilanishlari</li>
+                    <li>✓ Favqulodda tozalash</li>
+                    <li>✓ 24/7 qo'llab-quvvatlash</li>
+                </ul>
+                <button class="btn-outline">Obuna bo'lish</button>
+            </div>
+            <div class="pricing-card featured">
+                <div class="popular-badge">Eng Mashhur</div>
+                <div class="pricing-header">
+                    <h3>Yillik Reja</h3>
+                    <div class="price"><span class="amount">500,000</span> <span class="currency">UZS/yil</span></div>
+                </div>
+                <ul class="features-list">
+                    <li>✓ Oylik tozalash</li>
+                    <li>✓ Foto hujjatlash</li>
+                    <li>✓ WhatsApp yangilanishlari</li>
+                    <li>✓ Favqulodda tozalash</li>
+                    <li>✓ 24/7 qo'llab-quvvatlash</li>
+                    <li>✓ 2 oy bepul</li>
+                    <li>✓ Prioritet rejalashtirish</li>
+                </ul>
+                <button class="btn-primary">Obuna bo'lish</button>
+            </div>
+        </div>
+    </div>
+</section> {% endcomment %}
+<!-- Contact -->
+<section id="contact" class="section">
+    <div class="container">
+        <div class="contact-content">
+            <div class="section-header">
+                <h2>Biz bilan bog'laning</h2>
+                <p>Boshlashga tayyormisiz? Biz bilan maslahatlashish uchun bog'laning</p>
+            </div>
+
+            <!-- ✅ Xabar muvaffaqiyatli yuborilganda ko‘rinadigan blok -->
+            <div id="successMessage" class="alert alert-success" style="display: none;">
+                ✅ Xabaringiz muvaffaqiyatli yuborildi!
+            </div>
+
+            <div class="contact-form-container">
+                <form id="contactForm" class="contact-form">
+                    <div class="form-group">
+                        <span class="form-icon">👤</span>
+                        <input type="text" name="name" placeholder="Ismingiz" required>
+                    </div>
+                    <div class="form-group">
+                        <span class="form-icon">📞</span>
+                        <!-- Faqat raqam kiritishga ruxsat -->
+                        <input type="tel" name="phone" placeholder="Telefon raqamingiz" required
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                    </div>
+                    <button type="submit" class="btn-primary">Xabar yuborish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ✅ JS: So‘rov yuborish va xabar ko‘rsatish -->
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const successBox = document.getElementById('successMessage');
+
+    fetch("{% url 'contact' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            successBox.style.display = 'block';
+            form.reset();
+
+            // 5 soniyadan so‘ng avtomatik yashirinadi
+            setTimeout(() => {
+                successBox.style.display = 'none';
+            }, 5000);
+        } else {
+            alert("Xatolik: " + (data.error || data.message));
+        }
+    })
+    .catch(error => {
+        alert("Server bilan bog‘lanishda xatolik yuz berdi.");
+        console.error(error);
+    });
+});
+</script>
+
+<!-- ✅ CSS (agar Bootstrap yo‘q bo‘lsa, bu alert uslubi ishlaydi) -->
+<style>
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 16px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+  .contact-info a {
+    color: white;
+    text-decoration: none;
+  }
+
+  .contact-info a:hover {
+    color: white;
+    text-decoration: none;
+  }
+  
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Maskan</h3>
+                <p>Ishonchli qo‘llab-quvvatlovchi tizim: biz musulmon qabrlarini hurmat bilan asraymiz va O‘zbekiston bo‘ylab oilalarga yodgorlikni saqlashda yordam beramiz..</p>
+            </div>
+            <div class="footer-section">
+                <h4>Tezkor Havolalar</h4>
+                <ul>
+                    <li><a href="#how-it-works">Qanday ishlaydi</a></li>
+                    {% comment %} <li><a href="#pricing">Narxlar</a></li> {% endcomment %}
+                    <li><a href="#testimonials">Mijozlar fikri</a></li>
+                    <li><a href="#contact">Aloqa</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Aloqa Ma'lumotlari</h4>
+                <div class="contact-info">
+                    <div>
+                        <span>📧</span>
+                        <a href="mailto:ochilovkomronbek809@gmail.com">ochilovkomronbek809@gmail.com</a>
+                    </div>
+                    <div>
+                        <span>📞</span>
+                        <a href="tel:+998949774781">+998 (94) 977-47-81</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Maskan. Barcha huquqlar himoyalangan. Islom an'analariga hurmat bilan qurilgan.</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

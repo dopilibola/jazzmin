@@ -40,27 +40,31 @@ def send_telegram_message(message):
     }
     requests.post(url, data=data)
 
+  # agar alohida funksiya bo'lsa
+
 @login_required(login_url='/login/')
 def add_infodata(request):
-    if not request.user.is_authenticated:
-        return render(request, 'login.html')
+    # Faqat staff foydalanuvchilarga ruxsat
+    if not request.user.is_staff:
+        return render(request, 'no_access.html')  # yoki 403 page chiqarish
+
+    if request.method == 'POST':
+        form = InfodataForm(request.POST)
+        if form.is_valid():
+            infodata = form.save(commit=False)
+            infodata.created_by = request.user
+            infodata.save()
+
+            # 🔔 Telegramga xabar yuborish
+            message = f"Yangi infodata qo‘shildi!\nUser: {request.user.username}\nID: {infodata.id}"
+            send_telegram_message(message)
+
+            return redirect('contact_success') 
     else:
-        if request.method == 'POST':
-            form = InfodataForm(request.POST)
-            if form.is_valid():
-                infodata = form.save(commit=False)
-                infodata.created_by = request.user
-                infodata.save()
+        form = InfodataForm()
 
-                # 🔔 Telegramga xabar yuborish
-                message = f"Yangi infodata qo‘shildi!\nUser: {request.user.username}\nID: {infodata.id}"
-                send_telegram_message(message)
+    return render(request, 'infodata.html', {'form': form})
 
-                return redirect('contact_success') 
-        else:
-            form = InfodataForm()
-        return render(request, 'infodata.html', {'form': form})
-# views.py
 
 
 def qabr(request):

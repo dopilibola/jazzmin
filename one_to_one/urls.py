@@ -8,7 +8,10 @@ urlpatterns = [
     path('contact_success/', views.contact_success, name='contact_success'),
     path('qabr', views.qabr, name='qabr'),
     path('upload/', views.upload_image, name='upload_image'),
-    path('images/', views.image_list, name='image_list'),    
+    path('images/', views.image_list, name='image_list'), 
+
+
+       
     
 ]
 if settings.DEBUG:

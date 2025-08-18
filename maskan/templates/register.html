@@ -1,39 +1,82 @@
-{% extends 'base.html'%}
+{% extends 'base.html' %}
 {% block content %}
 
-    <header class="bg-dark text-white py-5">
-        <div class="container px-4 px-lg-5">
-            <div class="text-center text-uppercase">
-                <h1 class="mb-4">Ro'yhatdan o'tish  ...</h1>
-                <p class="lead">Ro'yhatdan o'tish uchun to'ldiring ...</p>
-            </div>
-        </div>
-    </header>
-    <div class="container">
-        <div class="row">
-            
-                <div class="col-md-6 offset-mb-3">
-                    <br/><br>
-                    <form method="POST" actions="{% url 'register' %}">
-                            {% csrf_token %}
+<style>
+    .register-container {
+        max-width: 500px;
+        margin: 3rem auto;
+        padding: 2.5rem 2rem 2rem 2rem;
+        background: #fff;
+        border-radius: 1.25rem;
+        box-shadow: 0 6px 32px rgba(0,0,0,0.08);
+    }
 
-                            {{ form.as_p  }}
-                            <br/><br/>
-                            <button type="submit" class="btn btn-secondary">Register</button>
-                        
-                    </form>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-                </div>
-           
-        </div>
-    </div>
+    .register-title {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #22223b;
+        text-align: center;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
 
+    .register-subtitle {
+        font-size: 1rem;
+        color: #6c757d;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .form-control {
+        font-size: 1rem;
+        padding: 0.8rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .btn-register {
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 0.85rem 0;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        background: linear-gradient(90deg, #6c757d 60%, #adb5bd 100%);
+        color: #fff;
+        border: none;
+        transition: background 0.2s;
+    }
+
+    .btn-register:hover {
+        background: linear-gradient(90deg, #495057 60%, #868e96 100%);
+    }
+
+    @media (max-width: 600px) {
+        .register-container {
+            max-width: 95%;
+            margin: 1.5rem auto;
+            padding: 1.5rem;
+        }
+
+        .register-title {
+            font-size: 1.5rem;
+        }
+
+        .form-control, .btn-register {
+            font-size: 1rem;
+            padding: 0.75rem;
+        }
+    }
+</style>
+
+
+
+<div class="register-container">
+    <form method="POST" action="{% url 'register' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-register">Ro'yhatdan o'tish</button>
+    </form>
+</div>
 
 {% endblock %}

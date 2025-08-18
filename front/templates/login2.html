@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cemetery Digitization System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/login2.css' %}">
+    <script src="{% static 'js/login2.js' %}"></script>
+</head>
+<body>
+    <!-- Main Homepage -->
+    <div class="homepage-container">
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Qabristonni raqamlashtirish tizimi</h1>
+                <p class="hero-subtitle">Xotiralarni saqlang, avlodlarni bog'lang</p>
+
+                    <style>
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    background: #f7f8fa;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    padding: 2.5rem 1.5rem;
+    margin: 2rem auto;
+    max-width: 350px;
+}
+.login-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    color: #222;
+    letter-spacing: 0.5px;
+}
+.login-btn {
+    width: 100%;
+    padding: 1.1rem 0;
+    margin-bottom: 1.2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    cursor: pointer;
+    transition: background 0.18s, box-shadow 0.18s, color 0.18s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.login-btn.user {
+    background: linear-gradient(90deg, #4f8cff 0%, #6ed6ff 100%);
+    color: #fff;
+}
+.login-btn.user:hover {
+    background: linear-gradient(90deg, #357ae8 0%, #4fc3f7 100%);
+    box-shadow: 0 4px 16px rgba(79,140,255,0.13);
+}
+.login-btn.cemetery {
+    background: linear-gradient(90deg, #232526 0%, #414345 100%);
+    color: #fff;
+}
+.login-btn.cemetery:hover {
+    background: linear-gradient(90deg, #232526 0%, #6e7a7e 100%);
+    box-shadow: 0 4px 16px rgba(35,37,38,0.13);
+}
+.login-btn i {
+    font-size: 1.4rem;
+}
+.login-separator {
+    margin: 1.5rem 0 1.2rem 0;
+    color: #aaa;
+    font-size: 0.95rem;
+    text-align: center;
+    position: relative;
+}
+.login-separator:before, .login-separator:after {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 1px;
+    background: #e0e0e0;
+    vertical-align: middle;
+    margin: 0 10px;
+}
+</style>
+<style>
+@media (max-width: 600px) {
+    .login-container {
+        min-height: unset;
+        max-width: 98vw;
+        padding: 1.2rem 0.5rem;
+        margin: 1.2rem auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .login-title {
+        font-size: 1.3rem;
+        margin-bottom: 1.2rem;
+    }
+    .login-btn {
+        font-size: 1rem;
+        padding: 0.9rem 0;
+        border-radius: 9px;
+    }
+    .login-btn i {
+        font-size: 1.1rem;
+    }
+    .login-separator {
+        font-size: 0.85rem;
+        margin: 1rem 0 0.8rem 0;
+    }
+    .login-separator:before, .login-separator:after {
+        width: 20px;
+        margin: 0 5px;
+    }
+}
+</style>
+<div class="login-container">
+    <div class="login-title">Tizimga kirish</div>
+    <button class="login-btn user" onclick="window.location.href='{% url 'login' %}'">
+        <i class="bi bi-person-fill"></i>
+        <span>Foydalanuvchi sifatida kirish</span>
+    </button>
+    <div class="login-separator">yoki</div>
+    <button class="login-btn cemetery" onclick="window.location.href='/admin/'">
+        <i class="bi bi-building-fill"></i>
+        <span>Xodimlar uchun kirish</span>
+    </button>
+</div>
+
+
+
+    <!-- Cemetery Owner Modal -->
+    <div class="modal-overlay" id="cemeteryModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Cemetery Owner Access</h2>
+                <button class="close-btn" onclick="closeCemeteryModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
+
+        </div>
+    </div>
+
+
+
+    
+</body>
+</html>

@@ -2,21 +2,20 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+AUTH_USER_MODEL = 'maskan.User'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG') == 'True'
-# ALLOWED_HOSTS = []
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
-# CSRF_COOKIE_SECURE = True  # HTTPS bo'lsa True
-# CSRF_USE_SESSIONS = False  # Cookie orqali ishlatilsin
-# ALLOWED_HOSTS = ['your-domain.com']  # Domeningizni kiriting
-CSRF_TRUSTED_ORIGINS = ['https://mas-kan.uz']
+DEBUG = os.getenv('DEBUG') == 'False'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
-
+# CSRF trusted origins from env
+_csrf_env = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
 # SECRET_KEY = os.getenv('SECRET_KEY')
 # DEBUG = os.getenv('DEBUG') == 'True'
 
@@ -42,7 +41,7 @@ INSTALLED_APPS = [
     # local
     'maskan',
     'one_to_one',
-    
+    'front',
 ]
 
 MIDDLEWARE = [
@@ -92,6 +91,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
+        # 'HOST': 'localhost', 
         # 'HOST': 'host.docker.internal',
         'PORT': os.getenv('DB_PORT'),
     }
@@ -113,13 +113,21 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    # {
+    #     'NAME': 'yourapp.validators.validate_password_length',
+    # },
+    # {
+    #     'NAME': 'yourapp.validators.validate_password_not_numeric',
+    # },
 ]
+
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'uz'
 
 TIME_ZONE = 'UTC'
 

@@ -1,52 +1,120 @@
-{% extends 'base.html'%}
+{% extends 'base.html' %}
 {% block content %}
 
+<style>
+     .btn-secondary-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 500;
+        border: 2px solid #ced4da;
+        border-radius: 0.5rem;
+        color: #343a40;
+        background-color: #f8f9fa;
+        transition: all 0.2s ease-in-out;
+        text-decoration: none;
+     }
 
+    .btn-secondary-action:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+        color: #212529;
+        text-decoration: none;
+    }
 
+    .btn-secondary-action i {
+        margin-right: 0.5rem;
+    }
 
+    @media (max-width: 600px) {
+        .btn-secondary-action {
+            font-size: 0.95rem;
+            padding: 0.6rem 0.9rem;
+        }
+    }
+    .login-container {
+        max-width: 420px;
+        margin: 3rem auto;
+        padding: 2.5rem 2rem 2rem 2rem;
+        background: #fff;
+        border-radius: 1.25rem;
+        box-shadow: 0 6px 32px rgba(0,0,0,0.08);
+    }
+    .login-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+        color: #22223b;
+        text-align: center;
+        text-transform: uppercase;
+    }
+    .login-subtitle {
+        font-size: 1.1rem;
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .form-control {
+        font-size: 1.1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+    .btn-login {
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 0.85rem 0;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        background: linear-gradient(90deg, #343a40 60%, #6c757d 100%);
+        color: #fff;
+        border: none;
+        transition: background 0.2s;
+    }
+    .btn-login:hover {
+        background: linear-gradient(90deg, #23272b 60%, #495057 100%);
+    }
+    @media (max-width: 600px) {
+        .login-container {
+            max-width: 98vw;
+            margin: 1.5rem auto;
+            padding: 1.25rem 0.75rem 1rem 0.75rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        .login-title {
+            font-size: 1.5rem;
+        }
+        .form-control, .btn-login {
+            font-size: 1rem;
+            padding: 0.7rem 0.8rem;
+        }
+    }
+</style>
 
+<div class="login-container">
+    <div class="login-title">Kirish</div>
+    <div class="login-subtitle">Foydalanuvchini login va parolini yozing ...</div>
+    <form method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+        <input type="text" class="form-control" name="username" placeholder="Foydalanuvchi nomi" required autofocus>
+        <input type="password" class="form-control" name="password" placeholder="Parol" required>
+        <button type="submit" class="btn btn-login">Kirish</button>
+    </form>
 
-
-    <header class="bg-dark text-white py-5">
-        <div class="container px-4 px-lg-5">
-            <div class="text-center text-uppercase">
-                <h1 class="mb-4">Kirish</h1>
-                <p class="lead">Foydalanuvchini login va parolini yozing ...</p>
-            </div>
-        </div>
-    </header>
-    <br/><br>
-    <div class="container">
-        <div class="row">
-            <center>
-                <div class="col-md-6 offset-mb-3">
-                    <form method="POST" actions="{% url 'login' %}">
-                            {% csrf_token %}
-                        <div class="mb-3">
-                          
-                          <input type="taxt" class="form-control" name="username" placeholder="Enter Your username">
-                          
-                        </div>
-                        <div class="mb-3">
-                          
-                          <input type="password" class="form-control" name= "password" placeholder="enter your password">
-                        </div>
-                        <br/><br/>
-                        <button type="submit" class="btn btn-secondary">Kirish</button>
-                      </form>
-                    <br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-                </div>
-            </center>
-        </div>
-    </div>
-
+    <a href="https://t.me/maskanuzbot" class="btn-secondary-action" target="_blank" rel="noopener">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Ro'yhatdan o'tish (Telegram)</span>
+    </a>
+    <a href="https://t.me/maskanuzbot" class="btn-secondary-action" target="_blank" rel="noopener">
+        <i class="bi bi-key-fill"></i>
+        <span>Parolni unutdingizmi? (Telegram)</span>
+    </a>
+</div>
 
 {% endblock %}

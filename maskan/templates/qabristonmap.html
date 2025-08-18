@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f4f6;
+    padding: 20px;
+  }
+
+  .custom-search-btn {
+    background-color: #000;
+    color: #fff;
+    border: 2px solid #000;
+    border-radius: 50px;
+    padding: 10px 28px;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .custom-search-btn:hover {
+    background-color: #fff;
+    color: #000;
+    border-color: #000;
+    transform: scale(1.05);
+  }
+
+  .custom-search-btn:active {
+    background-color: #222;
+    color: #fff;
+    transform: scale(0.98);
+  }
+
+  .search-input {
+    border-radius: 50px 0 0 50px !important;
+    padding-left: 20px;
+    font-size: 16px;
+  }
+
+  .row-label {
+    font-weight: bold;
+    margin-top: 20px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .grave-square {
+    position: relative;
+    width: 80px;
+    height: 120px;
+    background-color: green;
+    cursor: pointer;
+    transition: transform 0.2s;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+
+  .grave-square::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background: inherit;
+    border-bottom-left-radius: 50% 100%;
+    border-bottom-right-radius: 50% 100%;
+  }
+
+  .grave-square:hover {
+    transform: scale(1.05);
+  }
+
+  .grave-square.green { background-color: #16a34a; }
+  .grave-square.yellow { background-color: #ff8800ff; }
+  .grave-square.red { background-color: #dc2626; }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+  }
+
+  .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 10px;
+    text-align: center;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal-content img {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+
+  .close {
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+  }
+
+  .close:hover {
+    color: black;
+  }
+
+  .grave-info-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+    text-align: left;
+  }
+
+  .grave-info-box div {
+    background: #f1f1f1;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .btn-edit {
+    margin-top: 20px;
+    padding: 10px 15px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .dua-text {
+    text-align: left;
+    margin-bottom: 20px;
+  }
+  .dua-text p { margin: 5px 0; }
+</style>
+
+<div class="container py-4">
+  <!-- Qidiruv -->
+  <form method="GET">
+    <div class="input-group mb-4">
+      <input type="text" class="form-control form-control-lg search-input" placeholder="Qabrni ism yoki familiya orqali qidirish..." name="qidiruv" value="{{ request.GET.qidiruv }}">
+      <button class="custom-search-btn" type="submit">Qidirish</button>
+    </div>
+  </form>
+
+  <!-- Qabrlar xaritasi -->
+  <div id="grave-container">
+    {% for qator, qabrlar in grouped_qabrlar.items %}
+      {% with matched_qabrlar=qabrlar|dictsort:"qabr_soni" %}
+        <div class="row" data-qator="{{ qator }}">
+          <div class="row-label">Qator: {{ qator }}</div>
+          {% for qabr in matched_qabrlar %}
+            {% if not request.GET.qidiruv or request.GET.qidiruv|lower in qabr.ism_familiyasi_marhum|lower %}
+              <div class="grave-square {{ qabr.status }}" onclick="showModal({{ qabr.id }})">
+                {{ qabr.qabr_soni }}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</div>
+
+{% for qator, qabrlar in grouped_qabrlar.items %}
+  {% for qabr in qabrlar %}
+    <div class="modal" id="modal-{{ qabr.id }}">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal({{ qabr.id }})">&times;</span>
+        <h2>{{ qabr.ism_familiyasi_marhum }}</h2>
+        <p><em>{{ qabr.karta_number }}</em></p>
+        <div class="grave-info-box">
+          <div><strong>Istqomat yillari:</strong><br>{{ qabr.years }}</div>
+          <div><strong>Tug‘ilgan yili:</strong><br>{{ qabr.years_new }}</div>
+          <div><strong>Vafot yili:</strong><br>{{ qabr.years_old }}</div>
+          <div><strong>Qator:</strong><br>{{ qabr.qator }}</div>
+          <div><strong>Qabr :</strong><br>{{ qabr.qabr_soni }}</div>
+          <div><strong>Qabriston:</strong><br>{{ product }}</div>
+        </div>
+        {% for img in qabr.images.all %}
+          <img src="{{ img.image.url }}" alt="Qabr rasmi">
+        {% empty %}
+          <p>Rasm yo‘q</p>
+        {% endfor %}
+
+        <a href="https://t.me/maskanuz1?text=asalomu alaykum qabrni tozalatirmoqchi edim shunga batafsil ma'lumot bera olasizmi ?  Qabristondagi: {{ product }} qondoshim {{ qabr.ism_familiyasi_marhum }} qabrini tozalash hizmatidan foydalanmoqchi edim. " target="_blank" rel="noopener">
+          <button class="btn-edit">Qabirni tozalash </button>
+        </a>
+        <a>
+          <button class="btn-edit" onclick="showDuaModal({{ qabr.id }})">Kerakli Duolar</button>
+        </a>
+      </div>
+    </div>
+
+    <!-- Duolar Modal -->
+    <div class="modal" id="dua-modal-{{ qabr.id }}">
+      <div class="modal-content">
+        <span class="close" onclick="closeDuaModal({{ qabr.id }})">&times;</span>
+        <h2>Qabr uchun o‘qiladigan duolar</h2>
+
+        <div class="dua-text">
+          <h4>1. Fotiha surasi</h4>
+          <p><b>O‘qilishi (lotincha):</b><br>
+          Bismillahir rohmanir rohiym<br>
+          Alhamdu lillahi robbil ‘aalamiin<br>
+          Ar-rohmanir rohiym<br>
+          Maaliki yavmiddiin<br>
+          Iyyaka na’budu wa iyyaka nasta’iyn<br>
+          Ihdinas sirootol mustaqiym<br>
+          Sirootollaziyna an‘amta ‘alayhim<br>
+          G‘oyril mag‘zuubi ‘alayhim wa lad-doolliyn</p>
+          <p><b>Tarjima:</b> Mehribon va rahmli Alloh nomi bilan. Hamd olamlar Parvardigori Allohgakidir... (Fotiha 1–7).</p>
+        </div>
+
+        <div class="dua-text">
+          <h4>2. Ixlos surasi</h4>
+          <p><b>O‘qilishi (lotincha):</b><br>
+          Bismillahir rohmanir rohiym<br>
+          Qul huvallohu ahad<br>
+          Allohus-somad<br>
+          Lam yalid va lam yuulad<br>
+          Va lam yakun lahu kufuwan ahad</p>
+          <p><b>Tarjima:</b> Ayting: U Alloh yakkadir... (Ixlos 1–4).</p>
+        </div>
+
+        <div class="dua-text">
+          <h4>3. Oyatul Kursiy</h4>
+          <p><b>O‘qilishi (lotincha):</b><br>
+          Allohu laa ilaaha illaa huwa-l-hayyul qoyyuum<br>
+          Laa ta’xuzuhuu sinatuw-wa laa navm<br>
+          Lahu maa fissamaawaati wa maa fil-ard<br>
+          Man zallazii yashfa’u ‘indahuu illaa bi-iznih<br>
+          Ya’lamu maa bayna aydiihim wa maa xolfahum<br>
+          Wa laa yuhiytuuna bi shay’im-min ‘ilmihi illaa bimaa shaa’<br>
+          Wasi’a kursiyyuhus samaawaati wal-ard<br>
+          Wa laa ya’uduhuu hifzuhumaa<br>
+          Wa huwal ‘aliyyul ‘aziym</p>
+          <p><b>Tarjima:</b> Alloh – undan o‘zga iloh yo‘q. U tirik, boqiy... (Baqara, 255-oyat).</p>
+        </div>
+
+        <hr>
+        <p><b>Manbalar:</b><br>
+          – Qur’oni Karim (Fotiha 1–7, Ixlos 1–4, Baqara 255)<br>
+          – Hadis: “Qabristonga borganingizda, Qur’on o‘qing va duolarni marhumga bag‘ishlang.” (Muslim, Abu Dawud rivoyatlari).
+        </p>
+      </div>
+    </div>
+  {% endfor %}
+{% endfor %}
+
+<script>
+  const searchInput = document.querySelector('input[name="qidiruv"]');
+  const graveContainer = document.getElementById("grave-container");
+
+  const qabristonId = {{ product.id }};
+  const ajaxUrlTemplate = "{% url 'qabristonmap_search_ajax' 0 %}";
+  const ajaxUrl = ajaxUrlTemplate.replace("/0/", `/${qabristonId}/`);
+
+  searchInput.addEventListener("input", function () {
+    const qidiruv = searchInput.value;
+
+    fetch(ajaxUrl + "?qidiruv=" + encodeURIComponent(qidiruv))
+      .then(response => response.json())
+      .then(data => {
+        graveContainer.innerHTML = "";
+
+        const grouped = {};
+
+        data.results.forEach(qabr => {
+          if (!grouped[qabr.qator]) grouped[qabr.qator] = [];
+          grouped[qabr.qator].push(qabr);
+        });
+
+        for (const [qator, qabrlar] of Object.entries(grouped)) {
+          const rowDiv = document.createElement("div");
+          rowDiv.className = "row";
+          rowDiv.dataset.qator = qator;
+
+          const labelDiv = document.createElement("div");
+          labelDiv.className = "row-label";
+          labelDiv.textContent = "Qator: " + qator;
+          rowDiv.appendChild(labelDiv);
+
+          qabrlar.sort((a, b) => a.qabr_soni - b.qabr_soni);
+
+          qabrlar.forEach(qabr => {
+            const qabrDiv = document.createElement("div");
+            qabrDiv.className = `grave-square ${qabr.status}`;
+            qabrDiv.textContent = qabr.qabr_soni;
+            qabrDiv.onclick = () => showModal(qabr.id);
+            rowDiv.appendChild(qabrDiv);
+          });
+
+          graveContainer.appendChild(rowDiv);
+        }
+      });
+  });
+
+  function showModal(id) {
+    document.getElementById('modal-' + id).style.display = 'block';
+  }
+
+  function closeModal(id) {
+    document.getElementById('modal-' + id).style.display = 'none';
+  }
+
+  function showDuaModal(id) {
+    document.getElementById('dua-modal-' + id).style.display = 'block';
+  }
+
+  function closeDuaModal(id) {
+    document.getElementById('dua-modal-' + id).style.display = 'none';
+  }
+
+  window.onclick = function(event) {
+    document.querySelectorAll('.modal').forEach(modal => {
+      if (event.target === modal) modal.style.display = 'none';
+    });
+  };
+</script>
+{% endblock %}
