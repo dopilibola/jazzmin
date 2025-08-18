@@ -1,31 +1,35 @@
-
 import os
-from dotenv import load_dotenv
 from pathlib import Path
-AUTH_USER_MODEL = 'maskan.User'
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-load_dotenv()
-
+# .env faylini yuklash
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+# Maxfiy kalit va DEBUG sozlamalari
 SECRET_KEY = os.getenv('SECRET_KEY')
-# DEBUG = os.getenv('DEBUG') == 'False'
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+# Domenlar va hostlar
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
 
-# CSRF trusted origins from env
+# CSRF uchun ishonchli domenlar/protokollar
 _csrf_env = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
 if _csrf_env:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
-# SECRET_KEY = os.getenv('SECRET_KEY')
-# DEBUG = os.getenv('DEBUG') == 'True'
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
-# ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com', 'localhost', '127.0.0.1']
+# HTTPS ishlatilsa CSRF cookie faqat HTTPS orqali yuborilsin
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
 
+# CSRF tokenini sessiya orqali ishlatish (default: False, cookie ishlatiladi)
+CSRF_USE_SESSIONS = os.getenv('CSRF_USE_SESSIONS', 'False') == 'True'
 
-# Application definition
+# Maxsus foydalanuvchi modeli
+AUTH_USER_MODEL = 'maskan.User'
 
+# Ilovalar
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -34,38 +38,32 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'crispy_forms',
     'bootstrap4',
-    
-    
-
-    # local
+    # local apps
     'maskan',
     'one_to_one',
     'front',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    # CSRF_COOKIE_SECURE = True  # HTTPS bo'lsa True
-# CSRF_USE_SESSIONS = False  # Cookie orqali ishlatilsin
-# ALLOWED_HOSTS = ['your-domain.com']  # Domeningizni kiriting
-# CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']
+    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF himoyasi
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# URL konfiguratsiyasi
 ROOT_URLCONF = 'bassic.urls'
 
+# Template sozlamalari
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 'DIRS': [],
         'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -79,13 +77,10 @@ TEMPLATES = [
     },
 ]
 
+# WSGI
 WSGI_APPLICATION = 'bassic.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -93,67 +88,31 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
-        # 'HOST': 'localhost', 
-        # 'HOST': 'host.docker.internal',
         'PORT': os.getenv('DB_PORT'),
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
+# Parol validatorlari
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-    # {
-    #     'NAME': 'yourapp.validators.validate_password_length',
-    # },
-    # {
-    #     'NAME': 'yourapp.validators.validate_password_not_numeric',
-    # },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
+# Xalqaro sozlamalar
 LANGUAGE_CODE = 'en-us'
-# LANGUAGE_CODE = 'uz'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
+# Crispy forms
 CRISPY_TEMPLATE_PACK = "bootstrap4" 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+# Static fayllar
 STATIC_URL = 'static/'
-
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CSRF_COOKIE_SECURE = True  # HTTPS bo'lsa True
-# CSRF_USE_SESSIONS = False  # Cookie orqali ishlatilsin
-# ALLOWED_HOSTS = ['your-domain.com']  # Domeningizni kiriting
-# CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']
