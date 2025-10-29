@@ -36,7 +36,7 @@ class Qabriston(models.Model):
 
 
 class Image(models.Model):
-    image = models.ImageField(upload_to='media/hujjat/')  # Rasmni 'images/' papkaga saqlash
+    image = models.ImageField(upload_to='uploads/hujjat/')  # Rasmni 'images/' papkaga saqlash
     malumotnoma_nomeri = models.CharField(max_length=255, blank=True)
     # created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
