@@ -1,0 +1,26 @@
+# Production Docker Compose Configuration
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  jazzmin-web:
+    restart: always
+    command: gunicorn bassic.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    environment:
+      - DEBUG=False
+    
+  telegram-bot:
+    restart: always
+    command: python bot_main.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  
+  db:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

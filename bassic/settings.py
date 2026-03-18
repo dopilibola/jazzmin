@@ -13,6 +13,12 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Domenlar va hostlar
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
 
+# Lokal dev uchun umumiy hostlarni qo'shib qo'yamiz
+if DEBUG:
+    for _host in ('localhost', '127.0.0.1', '0.0.0.0'):
+        if _host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_host)
+
 # CSRF uchun ishonchli domenlar/protokollar
 _csrf_env = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')
 if _csrf_env:
@@ -44,6 +50,10 @@ INSTALLED_APPS = [
     'maskan',
     'one_to_one',
     'front',
+    # grave-care admin apps
+    'apps.core',
+    'apps.catalog',
+    'apps.orders',
 ]
 
 # Middleware
@@ -81,13 +91,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'bassic.wsgi.application'
 
 # Database
+DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
+if DB_HOST == 'db' and not os.path.exists('/.dockerenv'):
+    # "db" is the Docker service name; use localhost when running directly.
+    DB_HOST = '127.0.0.1'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
+        'HOST': DB_HOST,
         'PORT': os.getenv('DB_PORT'),
     }
 }
@@ -114,5 +129,20 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Media files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Telegram bot (grave-care services)
+TELEGRAM_BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+TELEGRAM_ADMIN_CHAT_ID = os.getenv('TELEGRAM_ADMIN_CHAT_ID', '')
+
+# Bot admin IDs (comma-separated in .env)
+ADMIN_IDS = os.getenv('ADMIN_IDS', TELEGRAM_ADMIN_CHAT_ID)
+
+# Google Sheets integration
+GOOGLE_SPREADSHEET_ID = os.getenv('GOOGLE_SPREADSHEET_ID', '')
+GOOGLE_CREDENTIALS_PATH = os.getenv('GOOGLE_CREDENTIALS_PATH', '')

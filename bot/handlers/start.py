@@ -1,0 +1,196 @@
+"""
+Start command, registration (name + phone), Add Grave flow, main menu.
+"""
+from typing import Optional
+
+from aiogram import Router
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
+
+from bot.database.db import async_session_factory
+from bot.database.queries import (
+    create_or_update_user,
+    get_regions,
+    get_user_by_telegram_id,
+    list_user_graves,
+)
+from bot.keyboards.inline import grave_regions_inline, language_inline
+from bot.keyboards.reply import main_menu_keyboard, phone_keyboard
+from bot.services.google_sheets import append_user_to_sheet
+from bot.states.forms import GraveState, RegistrationState
+from bot.utils.texts import get_text
+from bot.utils.validators import is_valid_full_name, is_valid_phone, normalize_phone
+from bot_config import GOOGLE_CREDENTIALS_PATH, SPREADSHEET_ID
+
+router = Router(name="start")
+
+
+def _is_registered(user) -> bool:
+    """Check if user has completed registration (name + phone)."""
+    return user and user.full_name and user.phone_number
+
+
+async def _get_lang(telegram_id: int) -> str:
+    """Get user language from DB."""
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, telegram_id)
+        return user.language if user else "ru"
+
+
+@router.message(CommandStart())
+async def cmd_start(
+    message: Message, state: Optional[FSMContext] = None
+) -> None:
+    """
+    Handle /start.
+    Unregistered: registration (name, phone) -> Add Grave.
+    Registered, no graves: Add Grave flow.
+    Registered, has graves: main menu.
+    """
+    if state:
+        await state.clear()
+    telegram_id = message.from_user.id
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, telegram_id)
+        if _is_registered(user):
+            await create_or_update_user(session, telegram_id)
+            await session.commit()
+            lang = user.language
+            graves = await list_user_graves(session, user.id)
+            if graves:
+                await message.answer(
+                    get_text(lang, "welcome_short"),
+                    reply_markup=main_menu_keyboard(lang),
+                )
+                return
+            # Registered but no graves: start Add Grave flow
+            await _start_add_grave_flow(message, state, lang)
+            return
+        # Not registered: start registration
+        lang = user.language if user else "ru"
+        if not user:
+            await create_or_update_user(session, telegram_id, language=lang)
+            await session.commit()
+    await state.set_state(RegistrationState.full_name)
+    await message.answer(get_text(lang, "registration_required"))
+
+
+async def _start_add_grave_flow(message: Message, state: FSMContext, lang: str) -> None:
+    """Start Add Grave flow: region -> district -> cemetery -> deceased -> relationship."""
+    async with async_session_factory() as session:
+        regions = await get_regions(session)
+    await state.set_state(GraveState.region)
+    await state.update_data(lang=lang)
+    await message.answer(
+        get_text(lang, "grave_enter_region"),
+        reply_markup=grave_regions_inline(regions, lang),
+    )
+
+
+# -----------------------------------------------------------------------------
+# Registration flow: full_name -> phone
+# -----------------------------------------------------------------------------
+
+
+@router.message(RegistrationState.full_name, lambda m: m.text)
+async def process_registration_name(message: Message, state: FSMContext) -> None:
+    """Validate full name, save, ask for phone."""
+    if not is_valid_full_name(message.text or ""):
+        lang = await _get_lang(message.from_user.id)
+        await message.answer(get_text(lang, "invalid_name"))
+        return
+    full_name = (message.text or "").strip()
+    telegram_id = message.from_user.id
+    async with async_session_factory() as session:
+        await create_or_update_user(session, telegram_id, full_name=full_name)
+        await session.commit()
+    await state.update_data(reg_full_name=full_name)
+    await state.set_state(RegistrationState.phone)
+    lang = await _get_lang(telegram_id)
+    await message.answer(
+        get_text(lang, "registration_phone"),
+        reply_markup=phone_keyboard(lang),
+    )
+
+
+@router.message(RegistrationState.phone, lambda m: m.contact)
+async def process_registration_phone_contact(message: Message, state: FSMContext) -> None:
+    """Process phone from shared Telegram contact."""
+    contact = message.contact
+    if not contact or not contact.phone_number:
+        return
+    phone = (contact.phone_number or "").strip()
+    if not phone.startswith("+"):
+        phone = "+" + phone
+    await _finish_registration(message, state, phone)
+
+
+@router.message(RegistrationState.phone, lambda m: m.text)
+async def process_registration_phone_text(message: Message, state: FSMContext) -> None:
+    """Process phone from typed text."""
+    phone = (message.text or "").strip()
+    if not is_valid_phone(phone):
+        lang = await _get_lang(message.from_user.id)
+        await message.answer(get_text(lang, "invalid_phone"))
+        return
+    phone = normalize_phone(phone)
+    if not phone.startswith("+"):
+        phone = "+" + phone
+    await _finish_registration(message, state, phone)
+
+
+async def _finish_registration(message: Message, state: FSMContext, phone: str) -> None:
+    """Save phone to DB, sync to Google Sheets, then start Add Grave flow."""
+    telegram_id = message.from_user.id
+    data = await state.get_data()
+    full_name = data.get("reg_full_name", "")
+    if not full_name:
+        # Fallback: get from DB
+        async with async_session_factory() as session:
+            user = await get_user_by_telegram_id(session, telegram_id)
+            full_name = user.full_name if user else ""
+
+    async with async_session_factory() as session:
+        await create_or_update_user(session, telegram_id, phone_number=phone)
+        await session.commit()
+
+    # Sync to Google Sheets
+    if SPREADSHEET_ID and GOOGLE_CREDENTIALS_PATH:
+        username = message.from_user.username
+        await append_user_to_sheet(
+            SPREADSHEET_ID,
+            GOOGLE_CREDENTIALS_PATH,
+            telegram_id=telegram_id,
+            full_name=full_name,
+            phone_number=phone,
+            username=username,
+        )
+
+    await state.clear()
+    lang = await _get_lang(telegram_id)
+    await message.answer(get_text(lang, "registration_complete"))
+    # Part 2: Add Grave (tozalatmoqchi bo'lgan qabr)
+    await _start_add_grave_flow(message, state, lang)
+
+
+# -----------------------------------------------------------------------------
+# Language selection (for users who had language choice before registration)
+# -----------------------------------------------------------------------------
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("lang:"))
+async def callback_language(callback: CallbackQuery, state: FSMContext) -> None:
+    """Save language and show main menu."""
+    lang = callback.data.split(":")[1]
+    await callback.answer()
+    telegram_id = callback.from_user.id
+    async with async_session_factory() as session:
+        await create_or_update_user(session, telegram_id, language=lang)
+        await session.commit()
+    await state.clear()
+    await callback.message.edit_text(get_text(lang, "welcome_short"))
+    await callback.message.answer(
+        get_text(lang, "main_menu"),
+        reply_markup=main_menu_keyboard(lang),
+    )

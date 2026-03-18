@@ -169,3 +169,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# macOS metadata
+.DS_Store
+
+# Local credentials / secrets
+credentials/google-service-account.json

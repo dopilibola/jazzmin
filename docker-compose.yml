@@ -14,6 +14,20 @@ services:
       - dressme_extranet
     command: python manage.py runserver 0.0.0.0:8000
 
+  telegram-bot:
+    build: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - intranet
+      - dressme_extranet
+    restart: unless-stopped
+    command: python bot_main.py
+
   db:
     image: postgres:15
     env_file:
