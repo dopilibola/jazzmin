@@ -5,7 +5,7 @@ and action buttons (Continue Shopping, View Cart).
 """
 from aiogram.types import CallbackQuery, Message
 
-from bot.utils.helpers import format_price
+from apps.botapp.helpers import format_price
 from bot.utils.texts import get_text
 
 

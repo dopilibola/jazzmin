@@ -5,6 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from bot.database.models import (
+    Cart,
     CartItem,
     Cemetery,
     District,
@@ -14,6 +15,7 @@ from bot.database.models import (
     Grave,
     Order,
     OrderItem,
+    Rating,
     Region,
     Service,
     SupportMessage,
@@ -266,12 +268,12 @@ async def add_flower_product_to_cart(
 
 
 async def get_flower_cart_items(session, user_id: int) -> list[CartItem]:
-    """Get cart items that are flower products only."""
+    """Get cart items that belong to the flower cart (products + services)."""
     result = await session.execute(
         select(CartItem)
         .where(
             CartItem.user_id == user_id,
-            CartItem.item_type == "flower_product",
+            CartItem.item_type.in_(["flower_product", "flower_service"]),
         )
         .order_by(CartItem.id)
     )
@@ -373,14 +375,45 @@ async def clear_cart(session, user_id: int) -> None:
 
 
 async def clear_flower_cart(session, user_id: int) -> None:
-    """Remove only flower product cart items for user."""
+    """Remove flower cart items (products + services) for user."""
     await session.execute(
         delete(CartItem).where(
             CartItem.user_id == user_id,
-            CartItem.item_type == "flower_product",
+            CartItem.item_type.in_(["flower_product", "flower_service"]),
         )
     )
     await session.flush()
+
+
+async def add_flower_service_to_cart(
+    session, user_id: int, service_id: int, title: str, price: int, quantity: int = 1
+) -> CartItem:
+    """Add a flower-category service to the flower cart. If exists, increase quantity."""
+    result = await session.execute(
+        select(CartItem).where(
+            CartItem.user_id == user_id,
+            CartItem.item_type == "flower_service",
+            CartItem.item_id == service_id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if item:
+        item.quantity += quantity
+        await session.flush()
+        await session.refresh(item)
+        return item
+    item = CartItem(
+        user_id=user_id,
+        item_type="flower_service",
+        item_id=service_id,
+        title=title,
+        quantity=quantity,
+        price=price,
+    )
+    session.add(item)
+    await session.flush()
+    await session.refresh(item)
+    return item
 
 
 # -----------------------------------------------------------------------------
@@ -562,7 +595,7 @@ async def create_flower_order_from_cart(
     for item in cart_items:
         oi = OrderItem(
             order_id=order.id,
-            item_type="flower_product",
+            item_type=item.item_type,
             item_id=item.item_id,
             title=item.title,
             quantity=item.quantity,
@@ -572,7 +605,7 @@ async def create_flower_order_from_cart(
     await session.execute(
         delete(CartItem).where(
             CartItem.user_id == user_id,
-            CartItem.item_type == "flower_product",
+            CartItem.item_type.in_(["flower_product", "flower_service"]),
         )
     )
     await session.flush()
@@ -647,6 +680,63 @@ async def create_support_message(
     session, user_id: int, text: str
 ) -> SupportMessage:
     """Create a support message record."""
+    msg = SupportMessage(user_id=user_id, text=text)
+    session.add(msg)
+    await session.flush()
+    await session.refresh(msg)
+    return msg
+
+
+async def get_completed_orders_by_user(session, user_id: int) -> list[Order]:
+    """Return orders with status 'completed' for a user."""
+    stmt = (
+        select(Order)
+        .where(Order.user_id == user_id, Order.status == "completed")
+        .order_by(Order.created_at.desc())
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_rating_for_order(session, order_id: int) -> Rating | None:
+    """Return existing rating for an order, or None."""
+    stmt = select(Rating).where(Rating.order_id == order_id)
+    result = await session.execute(stmt)
+    return result.scalars().first()
+
+
+async def create_rating(session, user_id: int, order_id: int, value: str) -> Rating:
+    """Create a new rating record."""
+    rating = Rating(user_id=user_id, order_id=order_id, value=value)
+    session.add(rating)
+    await session.flush()
+    await session.refresh(rating)
+    return rating
+
+
+async def update_rating_comment(session, rating_id: int, comment: str) -> Rating | None:
+    """Add comment to existing rating."""
+    stmt = select(Rating).where(Rating.id == rating_id)
+    result = await session.execute(stmt)
+    rating = result.scalars().first()
+    if rating:
+        rating.comment = comment
+        await session.flush()
+    return rating
+
+
+async def get_or_create_cart(session, user_id: int) -> Cart:
+    """Return a Cart wrapper with all CartItem rows for the given user."""
+    stmt = select(CartItem).where(CartItem.user_id == user_id)
+    result = await session.execute(stmt)
+    items = list(result.scalars().all())
+    return Cart(user_id=user_id, items=items)
+
+
+async def create_complaint(
+    session, user_id: int, text: str
+) -> SupportMessage:
+    """Create a complaint record (stored as SupportMessage)."""
     msg = SupportMessage(user_id=user_id, text=text)
     session.add(msg)
     await session.flush()

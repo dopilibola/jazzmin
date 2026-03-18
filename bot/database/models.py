@@ -211,6 +211,22 @@ class CartItem(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="cart_items")
 
+    @property
+    def service_id(self):
+        return self.item_id
+
+    @property
+    def unit_price(self):
+        return self.price
+
+
+class Cart:
+    """Lightweight wrapper around a user's cart items (not a DB table)."""
+
+    def __init__(self, user_id: int, items: list["CartItem"] | None = None):
+        self.user_id = user_id
+        self.items = items or []
+
 
 # -----------------------------------------------------------------------------
 # Region, District, Cemetery (location for orders)
@@ -368,3 +384,30 @@ class SupportMessage(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="support_messages")
+
+
+# -----------------------------------------------------------------------------
+# Rating
+# -----------------------------------------------------------------------------
+
+
+class Rating(Base):
+    """User rating for a completed order: like/dislike + optional comment."""
+
+    __tablename__ = "ratings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    order_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    value: Mapped[str] = mapped_column(String(20), nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+    user: Mapped["User"] = relationship("User")
+    order: Mapped["Order"] = relationship("Order")

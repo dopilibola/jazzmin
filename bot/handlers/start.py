@@ -1,5 +1,5 @@
 """
-Start command, registration (name + phone), Add Grave flow, main menu.
+Start command, language selection, registration (name + phone), Add Grave flow, main menu.
 """
 from typing import Optional
 
@@ -8,6 +8,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from apps.botapp.helpers import get_user_language, save_user_language, user_exists
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     create_or_update_user,
@@ -32,10 +33,8 @@ def _is_registered(user) -> bool:
 
 
 async def _get_lang(telegram_id: int) -> str:
-    """Get user language from DB."""
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
+    """Get user language from Django DB."""
+    return await get_user_language(telegram_id)
 
 
 @router.message(CommandStart())
@@ -44,19 +43,33 @@ async def cmd_start(
 ) -> None:
     """
     Handle /start.
-    Unregistered: registration (name, phone) -> Add Grave.
-    Registered, no graves: Add Grave flow.
-    Registered, has graves: main menu.
+    New user: language selection -> registration -> Add Grave.
+    Existing user: saved language -> check registration -> main menu / Add Grave.
     """
     if state:
         await state.clear()
     telegram_id = message.from_user.id
+
+    exists = await user_exists(telegram_id)
+
+    if not exists:
+        await save_user_language(telegram_id, "uz")
+        async with async_session_factory() as session:
+            await create_or_update_user(session, telegram_id, language="uz")
+            await session.commit()
+        await message.answer(
+            get_text("uz", "choose_language"),
+            reply_markup=language_inline(),
+        )
+        return
+
+    lang = await get_user_language(telegram_id)
+
     async with async_session_factory() as session:
         user = await get_user_by_telegram_id(session, telegram_id)
         if _is_registered(user):
             await create_or_update_user(session, telegram_id)
             await session.commit()
-            lang = user.language
             graves = await list_user_graves(session, user.id)
             if graves:
                 await message.answer(
@@ -64,11 +77,8 @@ async def cmd_start(
                     reply_markup=main_menu_keyboard(lang),
                 )
                 return
-            # Registered but no graves: start Add Grave flow
             await _start_add_grave_flow(message, state, lang)
             return
-        # Not registered: start registration
-        lang = user.language if user else "ru"
         if not user:
             await create_or_update_user(session, telegram_id, language=lang)
             await session.commit()
@@ -146,7 +156,6 @@ async def _finish_registration(message: Message, state: FSMContext, phone: str) 
     data = await state.get_data()
     full_name = data.get("reg_full_name", "")
     if not full_name:
-        # Fallback: get from DB
         async with async_session_factory() as session:
             user = await get_user_by_telegram_id(session, telegram_id)
             full_name = user.full_name if user else ""
@@ -155,7 +164,9 @@ async def _finish_registration(message: Message, state: FSMContext, phone: str) 
         await create_or_update_user(session, telegram_id, phone_number=phone)
         await session.commit()
 
-    # Sync to Google Sheets
+    from bot.middlewares.registration import invalidate_reg_cache
+    invalidate_reg_cache(telegram_id)
+
     if SPREADSHEET_ID and GOOGLE_CREDENTIALS_PATH:
         username = message.from_user.username
         await append_user_to_sheet(
@@ -170,27 +181,42 @@ async def _finish_registration(message: Message, state: FSMContext, phone: str) 
     await state.clear()
     lang = await _get_lang(telegram_id)
     await message.answer(get_text(lang, "registration_complete"))
-    # Part 2: Add Grave (tozalatmoqchi bo'lgan qabr)
     await _start_add_grave_flow(message, state, lang)
 
 
 # -----------------------------------------------------------------------------
-# Language selection (for users who had language choice before registration)
+# Language selection (callback from initial prompt or profile change)
 # -----------------------------------------------------------------------------
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("lang:"))
 async def callback_language(callback: CallbackQuery, state: FSMContext) -> None:
-    """Save language and show main menu."""
+    """Save language selection, then proceed to registration or main menu."""
     lang = callback.data.split(":")[1]
+    if lang not in ("uz", "ru", "en"):
+        lang = "uz"
     await callback.answer()
     telegram_id = callback.from_user.id
+
+    await save_user_language(telegram_id, lang)
+
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, language=lang)
         await session.commit()
-    await state.clear()
-    await callback.message.edit_text(get_text(lang, "welcome_short"))
-    await callback.message.answer(
-        get_text(lang, "main_menu"),
-        reply_markup=main_menu_keyboard(lang),
-    )
+        user = await get_user_by_telegram_id(session, telegram_id)
+
+        if _is_registered(user):
+            graves = await list_user_graves(session, user.id)
+            await callback.message.edit_text(get_text(lang, "language_selected"))
+            if graves:
+                await callback.message.answer(
+                    get_text(lang, "welcome_short"),
+                    reply_markup=main_menu_keyboard(lang),
+                )
+                return
+            await _start_add_grave_flow(callback.message, state, lang)
+            return
+
+    await callback.message.edit_text(get_text(lang, "language_selected"))
+    await state.set_state(RegistrationState.full_name)
+    await callback.message.answer(get_text(lang, "registration_required"))

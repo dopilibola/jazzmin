@@ -82,3 +82,27 @@ class FlowerPaymentState(StatesGroup):
     """Flower payment: upload receipt screenshot."""
 
     upload_receipt = State()
+
+
+class ComplaintState(StatesGroup):
+    """Complaint: user writes complaint text."""
+
+    waiting_for_text = State()
+
+
+class RatingCommentState(StatesGroup):
+    """Rating: optional comment after like/dislike."""
+
+    waiting_comment = State()
+
+
+class OrderCheckoutState(StatesGroup):
+    """Order checkout from cart: region, district, cemetery, deceased, years."""
+
+    region = State()
+    district = State()
+    cemetery = State()
+    deceased_full_name = State()
+    birth_year = State()
+    death_year = State()
+    confirm = State()

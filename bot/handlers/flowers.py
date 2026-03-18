@@ -1,22 +1,28 @@
 """
-Flower feature module: categories, products, cart, checkout, payment.
-Handles flower services for grave care application.
+Flower feature module: flat product list, cart, checkout, payment.
+All flower/product data + "Gul ekish" service come from Django Admin DB.
+No intermediate category step — every flower is shown as a direct button.
 """
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, PhotoSize
 
+from apps.botapp.helpers import (
+    format_price,
+    get_all_active_flower_products,
+    get_flower_product_by_pk,
+    get_flower_services,
+    get_service_by_pk,
+    get_user_language as _get_lang,
+)
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     add_flower_product_to_cart,
+    add_flower_service_to_cart,
     clear_flower_cart,
     create_or_update_user,
     create_flower_order_from_cart,
     get_flower_cart_items,
-    get_flower_category_by_id,
-    get_flower_products_by_category,
-    get_flower_product_by_id,
-    get_all_flower_categories,
     get_order_by_id,
     get_user_by_telegram_id,
     remove_cart_item,
@@ -24,13 +30,11 @@ from bot.database.queries import (
 )
 from bot.keyboards.inline import (
     flower_cart_inline,
-    flower_categories_inline,
     flower_confirm_order_inline,
-    flower_products_inline,
+    flowers_direct_inline,
 )
 from bot.keyboards.reply import cancel_keyboard, main_menu_keyboard
 from bot.states.forms import FlowerCheckoutState, FlowerPaymentState
-from bot.utils.helpers import format_price
 from bot.utils.telegram_helpers import safe_edit_text
 from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_full_name, is_valid_year
@@ -38,15 +42,36 @@ from bot.utils.validators import is_valid_full_name, is_valid_year
 router = Router(name="flowers")
 
 
-async def _get_lang(telegram_id: int) -> str:
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
+# ---------------------------------------------------------------------------
+# Helper: build flowers menu text + keyboard
+# ---------------------------------------------------------------------------
 
 
-# -----------------------------------------------------------------------------
-# Flowers menu (categories)
-# -----------------------------------------------------------------------------
+async def _build_flowers_menu(lang: str):
+    """Fetch all active flower products + flower services; return (text, keyboard)."""
+    products = await get_all_active_flower_products()
+    services = await get_flower_services()
+
+    if not products and not services:
+        return (
+            get_text(lang, "flower_menu_title") + "\n\n" + get_text(lang, "cart_empty"),
+            None,
+        )
+
+    lines = [get_text(lang, "flower_menu_title"), ""]
+    for p in products:
+        lines.append(f"🌸 {p.get_name(lang)} — {format_price(p.price, lang)}")
+    for s in services:
+        lines.append(f"🌱 {s.name} — {format_price(s.price, lang)}")
+
+    text = "\n".join(lines)
+    kb = flowers_direct_inline(products, services, lang)
+    return text, kb
+
+
+# ---------------------------------------------------------------------------
+# Flowers menu (flat list — no categories)
+# ---------------------------------------------------------------------------
 
 
 @router.message(
@@ -59,141 +84,62 @@ async def _get_lang(telegram_id: int) -> str:
     )
 )
 async def show_flower_menu(message: Message) -> None:
-    """Show flower categories: planted around / placed on grave."""
+    """Show ALL flower products + flower services as individual buttons."""
     lang = await _get_lang(message.from_user.id)
-    async with async_session_factory() as session:
-        categories = await get_all_flower_categories(session)
-    if not categories:
-        await message.answer(
-            get_text(lang, "flower_menu_title") + "\n\n" + get_text(lang, "cart_empty"),
-            reply_markup=main_menu_keyboard(lang),
-        )
-        return
-    text = get_text(lang, "flower_menu_title") + "\n\n"
-    text += "1. " + categories[0].get_name(lang) + "\n"
-    text += "2. " + categories[1].get_name(lang) if len(categories) > 1 else ""
-    await message.answer(
-        text,
-        reply_markup=flower_categories_inline(categories, lang),
-    )
+    text, kb = await _build_flowers_menu(lang)
+    await message.answer(text, reply_markup=kb or main_menu_keyboard(lang))
 
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Continue Shopping (from add-to-cart notification)
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.callback_query(lambda c: c.data and c.data == "nav:continue:flowers")
 async def continue_shopping_flowers_callback(callback: CallbackQuery) -> None:
-    """
-    Handle 'Continue Shopping' from add-to-cart notification.
-    Edits the notification to show flower categories menu.
-    """
+    """Handle 'Continue Shopping' — show flat flowers list."""
     await callback.answer()
     lang = await _get_lang(callback.from_user.id)
-    async with async_session_factory() as session:
-        categories = await get_all_flower_categories(session)
-    if not categories:
-        await safe_edit_text(
-            callback,
-            get_text(lang, "flower_menu_title") + "\n\n" + get_text(lang, "cart_empty"),
-        )
-        return
-    text = get_text(lang, "flower_menu_title") + "\n\n"
-    text += "1. " + categories[0].get_name(lang) + "\n"
-    if len(categories) > 1:
-        text += "2. " + categories[1].get_name(lang)
-    await safe_edit_text(
-        callback,
-        text,
-        reply_markup=flower_categories_inline(categories, lang),
-    )
+    text, kb = await _build_flowers_menu(lang)
+    await safe_edit_text(callback, text, reply_markup=kb)
 
 
-# -----------------------------------------------------------------------------
-# Category selected -> show products
-# -----------------------------------------------------------------------------
-
-
-@router.callback_query(lambda c: c.data and c.data.startswith("flcat:"))
-async def flower_category_callback(callback: CallbackQuery) -> None:
-    """Handle category selection: show products or back to menu."""
-    await callback.answer()
-    data = callback.data
-    lang = await _get_lang(callback.from_user.id)
-    back_to_services = data.endswith(":svc")
-    data_clean = data.replace(":svc", "")
-
-    if data_clean == "flcat:menu":
-        async with async_session_factory() as session:
-            categories = await get_all_flower_categories(session)
-        text = get_text(lang, "flower_menu_title") + "\n\n"
-        text += "1. " + categories[0].get_name(lang) + "\n"
-        if len(categories) > 1:
-            text += "2. " + categories[1].get_name(lang)
-        await safe_edit_text(
-            callback,
-            text,
-            reply_markup=flower_categories_inline(categories, lang, back_to_services),
-        )
-        return
-
-    category_id = int(data_clean.replace("flcat:", ""))
-    async with async_session_factory() as session:
-        products = await get_flower_products_by_category(session, category_id)
-    if not products:
-        await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
-        return
-    text = get_text(lang, "flower_catalog") + "\n\n"
-    for p in products:
-        text += f"• {p.get_name(lang)} — {format_price(p.price, lang)}\n"
-        text += f"  {p.get_description(lang)[:60]}...\n\n"
-    await safe_edit_text(
-        callback,
-        text,
-        reply_markup=flower_products_inline(products, category_id, lang, back_to_services),
-    )
-
-
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Add flower product to cart
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("flprod:add:"))
 async def add_flower_product_callback(callback: CallbackQuery) -> None:
-    """
-    Add flower product to cart.
-    - Updates cart in database (quantity, total)
-    - Sends notification with product name, price
-    - Shows Continue Shopping and View Cart buttons
-    """
+    """Add flower product to cart."""
     await callback.answer()
     product_id = int(callback.data.replace("flprod:add:", ""))
     telegram_id = callback.from_user.id
     lang = await _get_lang(telegram_id)
+
+    product = await get_flower_product_by_pk(product_id)
+    if not product:
+        await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
+        return
+
     async with async_session_factory() as session:
         user = await create_or_update_user(session, telegram_id)
         await session.flush()
-        product = await get_flower_product_by_id(session, product_id)
-        if not product:
-            await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
-            return
         cart_item = await add_flower_product_to_cart(
             session,
             user.id,
             product_id,
             product.get_name(lang),
-            product.price,
+            int(product.price),
             1,
         )
         await session.commit()
-    # Send notification with product details and action buttons
-    from bot.services.cart_notifier import get_add_to_cart_message
+
     from bot.keyboards.inline import add_to_cart_notification_inline
+    from bot.services.cart_notifier import get_add_to_cart_message
 
     msg = get_add_to_cart_message(
-        lang, product.get_name(lang), product.price, cart_item.quantity
+        lang, product.get_name(lang), int(product.price), cart_item.quantity
     )
     await callback.message.answer(
         msg,
@@ -201,9 +147,52 @@ async def add_flower_product_callback(callback: CallbackQuery) -> None:
     )
 
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Add flower service (e.g. "Gul ekish") to cart
+# ---------------------------------------------------------------------------
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("flsvc:add:"))
+async def add_flower_service_callback(callback: CallbackQuery) -> None:
+    """Add a flower-category service (e.g. Gul ekish) to the flower cart."""
+    await callback.answer()
+    service_id = int(callback.data.replace("flsvc:add:", ""))
+    telegram_id = callback.from_user.id
+    lang = await _get_lang(telegram_id)
+
+    service = await get_service_by_pk(service_id)
+    if not service:
+        await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
+        return
+
+    async with async_session_factory() as session:
+        user = await create_or_update_user(session, telegram_id)
+        await session.flush()
+        cart_item = await add_flower_service_to_cart(
+            session,
+            user.id,
+            service_id,
+            service.name,
+            int(service.price),
+            1,
+        )
+        await session.commit()
+
+    from bot.keyboards.inline import add_to_cart_notification_inline
+    from bot.services.cart_notifier import get_add_to_cart_message
+
+    msg = get_add_to_cart_message(
+        lang, service.name, int(service.price), cart_item.quantity
+    )
+    await callback.message.answer(
+        msg,
+        reply_markup=add_to_cart_notification_inline(lang),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Flower cart: view, remove, clear, confirm
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("flcart:"))
@@ -253,6 +242,21 @@ async def flower_cart_callback(callback: CallbackQuery, state: FSMContext) -> No
             await _start_flower_checkout_from_cart(callback, state)
             return
 
+        if data == "flcart:view":
+            if not items:
+                await safe_edit_text(
+                    callback,
+                    get_text(lang, "cart_title") + "\n\n" + get_text(lang, "cart_empty"),
+                )
+                return
+            content = _format_flower_cart(items, lang)
+            await safe_edit_text(
+                callback,
+                get_text(lang, "cart_title") + "\n\n" + content,
+                reply_markup=flower_cart_inline(lang, items, has_items=True),
+            )
+            return
+
 
 async def _start_flower_checkout_from_cart(
     callback: CallbackQuery, state: FSMContext
@@ -287,38 +291,9 @@ def _format_flower_cart(items: list, lang: str) -> str:
     return "\n".join(lines)
 
 
-# -----------------------------------------------------------------------------
-# Flower cart from main menu (show flower cart)
-# -----------------------------------------------------------------------------
-
-
-@router.callback_query(lambda c: c.data and c.data == "flcart:view")
-async def view_flower_cart_callback(callback: CallbackQuery) -> None:
-    """View flower cart (triggered from somewhere)."""
-    await callback.answer()
-    lang = await _get_lang(callback.from_user.id)
-    telegram_id = callback.from_user.id
-    async with async_session_factory() as session:
-        user = await create_or_update_user(session, telegram_id)
-        await session.flush()
-        items = await get_flower_cart_items(session, user.id)
-    if not items:
-        await safe_edit_text(
-            callback,
-            get_text(lang, "cart_title") + "\n\n" + get_text(lang, "cart_empty"),
-        )
-        return
-    content = _format_flower_cart(items, lang)
-    await safe_edit_text(
-        callback,
-        get_text(lang, "cart_title") + "\n\n" + content,
-        reply_markup=flower_cart_inline(lang, items, has_items=True),
-    )
-
-
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Flower checkout form (FSM): first name, last name, birth year, death year
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.message(FlowerCheckoutState.first_name, F.text)
@@ -395,9 +370,9 @@ async def flower_checkout_death_year(message: Message, state: FSMContext) -> Non
     )
 
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Proceed to Payment -> create order -> show payment instructions
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.callback_query(
@@ -441,9 +416,9 @@ async def flower_confirm_callback(callback: CallbackQuery, state: FSMContext) ->
             await callback.message.answer(reply_markup=main_menu_keyboard(lang))
 
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Payment receipt upload
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 @router.message(FlowerPaymentState.upload_receipt, F.photo)

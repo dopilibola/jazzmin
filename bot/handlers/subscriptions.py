@@ -5,19 +5,11 @@ Simple informational screen.
 from aiogram import F, Router
 from aiogram.types import Message
 
-from bot.database.db import async_session_factory
-from bot.database.queries import get_user_by_telegram_id
+from apps.botapp.helpers import get_user_language as _get_lang
 from bot.keyboards.reply import main_menu_keyboard
 from bot.utils.texts import get_text
 
 router = Router(name="subscriptions")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    """Get user language from DB."""
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 @router.message(

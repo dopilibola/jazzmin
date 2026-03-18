@@ -22,20 +22,15 @@ from bot.keyboards.inline import (
     order_regions_inline,
 )
 from bot.keyboards.reply import main_menu_keyboard
+from apps.botapp.helpers import format_price
 from bot.services.cart_logic import format_cart_for_display, get_cart_total
 from bot.states.forms import OrderCheckoutState
-from bot.utils.services_catalog import format_price, get_service, get_service_name
 from bot.utils.texts import get_text
 from bot.utils.telegram_helpers import safe_edit_text
 from bot.utils.validators import is_valid_full_name, is_valid_year
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="order_checkout")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 # -----------------------------------------------------------------------------
@@ -197,12 +192,10 @@ async def order_death_year(message: Message, state: FSMContext) -> None:
         district = await get_district_by_id(session, data["district_id"])
         cemetery = await get_cemetery_by_id(session, data["cemetery_id"])
         cart = await get_or_create_cart(session, data["cart_user_id"])
-        items = list(cart.items)  # Access while session is active
+        items = list(cart.items)
         services_lines = []
         for item in items:
-            svc = get_service(item.service_id)
-            name = get_service_name(svc, lang) if svc else item.service_id
-            services_lines.append(f"  • {name} x{item.quantity}")
+            services_lines.append(f"  • {item.title} x{item.quantity}")
         total_str = format_price(get_cart_total(cart), lang)
     region_name = region.get_name(lang) if region else ""
     district_name = district.get_name(lang) if district else ""
@@ -244,11 +237,14 @@ async def order_confirm_callback(callback: CallbackQuery, state: FSMContext) -> 
     if data == "ord:confirm":
         form_data = await state.get_data()
         async with async_session_factory() as session:
+            user = await get_user_by_telegram_id(session, form_data["cart_user_id"])
             cart = await get_or_create_cart(session, form_data["cart_user_id"])
             order = await create_order_from_cart(
                 session,
                 form_data["cart_user_id"],
-                cart,
+                cart.items,
+                full_name=user.full_name if user else "",
+                phone_number=user.phone_number if user else "",
                 region_id=form_data.get("region_id"),
                 district_id=form_data.get("district_id"),
                 cemetery_id=form_data.get("cemetery_id"),
@@ -259,7 +255,7 @@ async def order_confirm_callback(callback: CallbackQuery, state: FSMContext) -> 
             await session.commit()
         await state.clear()
         if order:
-            total_str = format_price(order.total, lang)
+            total_str = format_price(order.total_price, lang)
             await safe_edit_text(
                 callback,
                 get_text(lang, "order_placed", order_id=order.id, total=total_str),

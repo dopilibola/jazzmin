@@ -5,23 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from bot.database.migrations import run_migrations
 from bot.database.models import Base
-from bot.database.seed import (
-    seed_flower_categories_and_products,
-    seed_flowers,
-    seed_locations,
-    seed_services,
-)
+from bot.database.seed import seed_locations
 from bot_config import DATABASE_URL
 
 
-# Create async engine (SQLite requires check_same_thread=False)
 _engine = create_async_engine(
     DATABASE_URL,
     echo=False,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
 )
 
-# Session factory
 async_session_factory = async_sessionmaker(
     _engine,
     class_=AsyncSession,
@@ -51,9 +44,6 @@ async def init_db() -> None:
     await run_migrations(_engine)
     async with async_session_factory() as session:
         await seed_locations(session)
-        await seed_services(session)
-        await seed_flowers(session)
-        await seed_flower_categories_and_products(session)
         await session.commit()
 
 

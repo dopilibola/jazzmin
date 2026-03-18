@@ -11,14 +11,9 @@ from bot.keyboards.reply import main_menu_keyboard
 from bot.utils.helpers import format_price
 from bot.utils.telegram_helpers import safe_edit_text
 from bot.utils.texts import get_status_label, get_text
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="orders")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 def _format_order_list_item(order, lang: str) -> str:

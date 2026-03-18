@@ -8,6 +8,9 @@ TEXTS: dict[str, dict[str, str]] = {
         # Start / Welcome
         "welcome": "Welcome to the Grave Care Service.\nPlease select your language:",
         "welcome_short": "Welcome! How can we help you today?",
+        "choose_language": "Please choose your language:",
+        "language_selected": "Language selected.",
+        "btn_change_language": "Change Language",
         "registration_required": "To use the bot, please register first.\nEnter your full name:",
         "registration_phone": "Now share your phone number (tap the button or type it):",
         "registration_complete": "Registration complete! Now add the grave you want to clean.",
@@ -206,6 +209,9 @@ TEXTS: dict[str, dict[str, str]] = {
     "ru": {
         "welcome": "Добро пожаловать в сервис ухода за могилами.\nВыберите язык:",
         "welcome_short": "Добро пожаловать! Чем можем помочь?",
+        "choose_language": "Выберите язык:",
+        "language_selected": "Язык выбран.",
+        "btn_change_language": "Изменить язык",
         "registration_required": "Для использования бота необходимо зарегистрироваться.\nВведите ваше полное имя:",
         "registration_phone": "Теперь отправьте номер телефона (нажмите кнопку или введите вручную):",
         "registration_complete": "Регистрация завершена! Теперь добавьте могилу для уборки.",
@@ -389,6 +395,9 @@ TEXTS: dict[str, dict[str, str]] = {
     "uz": {
         "welcome": "Qabr parvarish xizmatiga xush kelibsiz.\nTilni tanlang:",
         "welcome_short": "Xush kelibsiz! Bugun qanday yordam bera olamiz?",
+        "choose_language": "Tilni tanlang:",
+        "language_selected": "Til tanlandi.",
+        "btn_change_language": "Tilni o'zgartirish",
         "registration_required": "Botdan foydalanish uchun ro'yxatdan o'ting.\nTo'liq ismingizni kiriting:",
         "registration_phone": "Endi telefon raqamingizni yuboring (tugmani bosing yoki yozing):",
         "registration_complete": "Ro'yxatdan o'tish yakunlandi! Endi tozalatmoqchi bo'lgan qabrni qo'shing.",

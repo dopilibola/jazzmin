@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.catalog',
     'apps.orders',
+    # telegram bot language/user management
+    'apps.botapp',
 ]
 
 # Middleware

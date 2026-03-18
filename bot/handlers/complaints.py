@@ -11,15 +11,9 @@ from bot.keyboards.reply import cancel_keyboard, main_menu_keyboard
 from bot.services.notifications import forward_complaint_to_admins
 from bot.states.forms import ComplaintState
 from bot.utils.texts import get_text
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="complaints")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    """Get user language from DB."""
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 def _is_cancel(text: str) -> bool:

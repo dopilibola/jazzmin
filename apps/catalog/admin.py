@@ -4,15 +4,15 @@ from .models import Service, Flower
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'is_active', 'created_at', 'updated_at')
-    list_filter = ('is_active', 'created_at')
+    list_display = ('name', 'category', 'price', 'is_active', 'updated_at')
+    list_filter = ('is_active', 'category')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    list_editable = ('is_active', 'price')
+    list_editable = ('is_active', 'price', 'category')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {
-            'fields': ('name', 'slug', 'price', 'description', 'image', 'is_active'),
+            'fields': ('name', 'slug', 'category', 'price', 'description', 'image', 'is_active'),
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

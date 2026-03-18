@@ -29,15 +29,9 @@ from bot.states.forms import GraveState
 from bot.utils.helpers import format_grave_date
 from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_month, is_valid_year
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="graves")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    """Get user language from DB."""
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 async def _require_profile(telegram_id: int) -> tuple[bool, str | None]:

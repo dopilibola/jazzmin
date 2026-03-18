@@ -3,8 +3,7 @@ Inline keyboards (buttons under messages).
 """
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.database.models import Flower, FlowerCategory, FlowerProduct, Service
-from bot.utils.helpers import format_price
+from apps.botapp.helpers import format_price
 from bot.utils.texts import get_status_label, get_text
 
 
@@ -14,13 +13,19 @@ from bot.utils.texts import get_status_label, get_text
 
 
 def profile_inline(lang: str) -> InlineKeyboardMarkup:
-    """Profile view: Update Profile button."""
+    """Profile view: Update Profile + Change Language buttons."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text=get_text(lang, "btn_update_profile"),
                     callback_data="profile:update",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "btn_change_language"),
+                    callback_data="profile:language",
                 ),
             ],
         ]
@@ -129,13 +134,13 @@ def services_main_inline(lang: str) -> InlineKeyboardMarkup:
 
 
 def services_list_inline(
-    services: list[Service], lang: str, add_back: bool = False
+    services: list, lang: str, add_back: bool = False
 ) -> InlineKeyboardMarkup:
     """List of services with Order (direct order, no cart). add_back=True adds Back to Services."""
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"{s.get_name(lang)} — {format_price(s.price, lang)}",
+                text=f"{s.name} — {format_price(s.price, lang)}",
                 callback_data=f"svc:order:{s.id}",
             ),
         ]
@@ -164,75 +169,31 @@ def service_detail_inline(lang: str, service_id: int) -> InlineKeyboardMarkup:
 
 
 # -----------------------------------------------------------------------------
-# Flowers (DB-based) - legacy
+# Flowers — flat list of all products + flower services (DB-based)
 # -----------------------------------------------------------------------------
 
 
-def flowers_list_inline(flowers: list[Flower], lang: str) -> InlineKeyboardMarkup:
-    """List of flowers with Add to Cart."""
-    buttons = [
-        [
-            InlineKeyboardButton(
-                text=f"{f.get_name(lang)} — {format_price(f.price, lang)}",
-                callback_data=f"flower:add:{f.id}",
-            ),
-        ]
-        for f in flowers
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-# -----------------------------------------------------------------------------
-# Flower Categories and Products (flower feature module)
-# -----------------------------------------------------------------------------
-
-
-def flower_categories_inline(
-    categories: list[FlowerCategory], lang: str, back_to_services: bool = False
+def flowers_direct_inline(
+    products: list, services: list, lang: str
 ) -> InlineKeyboardMarkup:
-    """Flower menu: two categories + View Cart. back_to_services=True adds Back to Services."""
-    suffix = ":svc" if back_to_services else ""
-    buttons = [
-        [
+    """Flat list: every flower product + flower-category services as buttons."""
+    buttons = []
+    for p in products:
+        buttons.append([
             InlineKeyboardButton(
-                text=cat.get_name(lang),
-                callback_data=f"flcat:{cat.id}{suffix}",
-            ),
-        ]
-        for cat in categories
-    ]
-    buttons.append(
-        [InlineKeyboardButton(text=get_text(lang, "btn_cart"), callback_data="flcart:view")]
-    )
-    if back_to_services:
-        buttons.append(
-            [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="svc:main")]
-        )
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-def flower_products_inline(
-    products: list[FlowerProduct],
-    category_id: int,
-    lang: str,
-    back_to_services: bool = False,
-) -> InlineKeyboardMarkup:
-    """List of flower products with Add to Cart. back_to_services=True: Back goes to svc:flowers."""
-    back_cb = "svc:flowers" if back_to_services else "flcat:menu"
-    buttons = [
-        [
-            InlineKeyboardButton(
-                text=f"{p.get_name(lang)} — {format_price(p.price, lang)}",
+                text=f"🌸 {p.get_name(lang)} — {format_price(p.price, lang)}",
                 callback_data=f"flprod:add:{p.id}",
             ),
-        ]
-        for p in products
-    ]
+        ])
+    for s in services:
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🌱 {s.name} — {format_price(s.price, lang)}",
+                callback_data=f"flsvc:add:{s.id}",
+            ),
+        ])
     buttons.append(
-        [
-            InlineKeyboardButton(text=get_text(lang, "btn_cart"), callback_data="flcart:view"),
-            InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data=back_cb),
-        ]
+        [InlineKeyboardButton(text=get_text(lang, "btn_cart"), callback_data="flcart:view")]
     )
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -461,5 +422,74 @@ def order_detail_inline(lang: str, order_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="order:list")],
+        ]
+    )
+
+
+# -----------------------------------------------------------------------------
+# Rating
+# -----------------------------------------------------------------------------
+
+
+def orders_to_rate_inline(orders: list, lang: str) -> InlineKeyboardMarkup:
+    """List of completed orders available to rate."""
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=f"#{o.id} — {get_status_label(lang, o.status)}",
+                callback_data=f"rate_order:{o.id}",
+            ),
+        ]
+        for o in orders
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def rating_like_dislike_inline(lang: str, order_id: int) -> InlineKeyboardMarkup:
+    """Like / Dislike buttons."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "rating_like"),
+                    callback_data=f"rate:{order_id}:like",
+                ),
+                InlineKeyboardButton(
+                    text=get_text(lang, "rating_dislike"),
+                    callback_data=f"rate:{order_id}:dislike",
+                ),
+            ],
+        ]
+    )
+
+
+def rating_skip_comment_inline(lang: str) -> InlineKeyboardMarkup:
+    """Skip comment button."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "rating_skip_comment"),
+                    callback_data="rating:skip",
+                ),
+            ],
+        ]
+    )
+
+
+def receipt_confirm_reject_inline(lang: str, order_id: int) -> InlineKeyboardMarkup:
+    """Admin: confirm or reject payment receipt."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "payment_confirm_btn"),
+                    callback_data=f"pay:confirm:{order_id}",
+                ),
+                InlineKeyboardButton(
+                    text=get_text(lang, "payment_reject_btn"),
+                    callback_data=f"pay:reject:{order_id}",
+                ),
+            ],
         ]
     )

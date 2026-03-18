@@ -20,14 +20,9 @@ from bot_config import ADMIN_IDS, PAYMENT_CARD_NUMBER, PAYMENT_CHANNEL_ID, PAYME
 from bot.utils.texts import get_text
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
 from bot.states.forms import PaymentState
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="payment")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 async def show_payment_options(callback: CallbackQuery, order_id: int, lang: str) -> None:

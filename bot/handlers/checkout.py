@@ -29,14 +29,9 @@ from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_full_name, is_valid_year
 
 from bot.states.forms import CheckoutState
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="checkout")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 # -----------------------------------------------------------------------------

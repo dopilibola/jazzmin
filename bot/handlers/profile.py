@@ -12,21 +12,15 @@ from bot.database.queries import (
     get_user_by_telegram_id,
     list_user_graves,
 )
-from bot.keyboards.inline import profile_inline
+from bot.keyboards.inline import language_inline, profile_inline
 from bot.keyboards.reply import main_menu_keyboard, phone_keyboard, profile_menu_keyboard
 from bot.states.forms import ProfileState
 from bot.utils.helpers import format_grave_date, format_price
 from bot.utils.texts import LANG_NAMES, get_status_label, get_text
 from bot.utils.validators import is_valid_full_name, is_valid_phone, normalize_phone
+from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="profile")
-
-
-async def _get_lang(telegram_id: int) -> str:
-    """Get user language from DB."""
-    async with async_session_factory() as session:
-        user = await get_user_by_telegram_id(session, telegram_id)
-        return user.language if user else "ru"
 
 
 def _format_order_list_item(order, lang: str) -> str:
@@ -161,6 +155,17 @@ async def back_to_main_menu(message: Message) -> None:
 # -----------------------------------------------------------------------------
 # Profile update (inline button)
 # -----------------------------------------------------------------------------
+
+
+@router.callback_query(lambda c: c.data == "profile:language")
+async def change_language(callback: CallbackQuery) -> None:
+    """Show language selection buttons."""
+    await callback.answer()
+    lang = await _get_lang(callback.from_user.id)
+    await callback.message.edit_text(
+        get_text(lang, "choose_language"),
+        reply_markup=language_inline(),
+    )
 
 
 @router.callback_query(lambda c: c.data == "profile:update")

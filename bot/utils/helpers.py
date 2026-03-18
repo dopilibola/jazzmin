@@ -1,7 +1,7 @@
 """
 Helper functions: price formatting, etc.
 """
-from bot.database.models import Flower, Service
+from apps.botapp.helpers import format_price  # noqa: F401 (re-exported)
 from bot.utils.texts import get_text
 
 
@@ -17,15 +17,8 @@ def format_grave_date(year: int | None, month: int | None, approximate: bool, la
     return part
 
 
-def format_price(price: int, lang: str = "en") -> str:
-    """Format price for display. Assumes UZS sum."""
-    return f"{price:,} sum".replace(",", " ")
-
-
-def get_item_title(item_type: str, item_id: int, service: Service | None, flower: Flower | None, lang: str) -> str:
-    """Get localized title for service or flower."""
-    if item_type == "service" and service:
-        return service.get_name(lang)
-    if item_type == "flower" and flower:
-        return flower.get_name(lang)
+def get_item_title(item_type: str, item_id: int, lang: str, title: str = "") -> str:
+    """Get title for a cart/order item. Uses stored title from cart item."""
+    if title:
+        return title
     return f"{item_type}#{item_id}"
