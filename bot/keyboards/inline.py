@@ -169,32 +169,27 @@ def service_detail_inline(lang: str, service_id: int) -> InlineKeyboardMarkup:
 
 
 # -----------------------------------------------------------------------------
-# Flowers — flat list of all products + flower services (DB-based)
+# Flowers — same pattern as Services (DB-based)
 # -----------------------------------------------------------------------------
 
 
-def flowers_direct_inline(
-    products: list, services: list, lang: str
+def flowers_list_inline(
+    flowers: list, lang: str, add_back: bool = False
 ) -> InlineKeyboardMarkup:
-    """Flat list: every flower product + flower-category services as buttons."""
-    buttons = []
-    for p in products:
-        buttons.append([
+    """List of flowers with Order (direct order, no cart). Same as services_list_inline."""
+    buttons = [
+        [
             InlineKeyboardButton(
-                text=f"🌸 {p.get_name(lang)} — {format_price(p.price, lang)}",
-                callback_data=f"flprod:add:{p.id}",
+                text=f"{f.name} — {format_price(f.price, lang)}",
+                callback_data=f"fl:order:{f.id}",
             ),
-        ])
-    for s in services:
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"🌱 {s.name} — {format_price(s.price, lang)}",
-                callback_data=f"flsvc:add:{s.id}",
-            ),
-        ])
-    buttons.append(
-        [InlineKeyboardButton(text=get_text(lang, "btn_cart"), callback_data="flcart:view")]
-    )
+        ]
+        for f in flowers
+    ]
+    if add_back:
+        buttons.append(
+            [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="fl:main")]
+        )
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -367,13 +362,19 @@ def order_confirm_inline(lang: str) -> InlineKeyboardMarkup:
 
 
 def payment_methods_inline(lang: str, order_id: int) -> InlineKeyboardMarkup:
-    """Single button: Transfer to payment (then show card, upload receipt)."""
+    """Two buttons: Internal card and Visa."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=get_text(lang, "payment_transfer_btn"),
-                    callback_data=f"pay:method:{order_id}:transfer",
+                    text=get_text(lang, "payment_internal_btn"),
+                    callback_data=f"pay:method:{order_id}:internal",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "payment_visa_btn"),
+                    callback_data=f"pay:method:{order_id}:visa",
                 ),
             ],
         ]
@@ -396,6 +397,51 @@ def receipt_confirm_reject_inline(lang: str, order_id: int) -> InlineKeyboardMar
             ],
         ]
     )
+
+
+def receipt_verify_inline(order_id: int, user_telegram_id: int, grave_id: int = 0) -> InlineKeyboardMarkup:
+    """True/False buttons for payment verification bot (BOT_TOKEN3)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ True",
+                    callback_data=f"verify:true:{order_id}:{user_telegram_id}:{grave_id}",
+                ),
+                InlineKeyboardButton(
+                    text="❌ False",
+                    callback_data=f"verify:false:{order_id}:{user_telegram_id}:{grave_id}",
+                ),
+            ],
+        ]
+    )
+
+
+def select_grave_for_order_inline(graves: list, lang: str, order_id: int) -> InlineKeyboardMarkup:
+    """Select a grave for order, with Add New Grave as first option."""
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=get_text(lang, "btn_add_new_grave"),
+                callback_data=f"pay:newgrave:{order_id}",
+            ),
+        ]
+    ]
+    for grave in graves:
+        name = grave.deceased_full_name or "—"
+        cemetery = grave.cemetery or "—"
+        label = f"🪦 {name} ({cemetery})"
+        if len(label) > 40:
+            label = label[:37] + "..."
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=label,
+                    callback_data=f"pay:grave:{order_id}:{grave.id}",
+                ),
+            ]
+        )
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 # -----------------------------------------------------------------------------
@@ -477,19 +523,3 @@ def rating_skip_comment_inline(lang: str) -> InlineKeyboardMarkup:
     )
 
 
-def receipt_confirm_reject_inline(lang: str, order_id: int) -> InlineKeyboardMarkup:
-    """Admin: confirm or reject payment receipt."""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=get_text(lang, "payment_confirm_btn"),
-                    callback_data=f"pay:confirm:{order_id}",
-                ),
-                InlineKeyboardButton(
-                    text=get_text(lang, "payment_reject_btn"),
-                    callback_data=f"pay:reject:{order_id}",
-                ),
-            ],
-        ]
-    )

@@ -33,7 +33,8 @@ from bot.handlers import (  # noqa: E402
     start,
     support,
 )
-from bot_config import BOT_TOKEN  # noqa: E402
+from bot.handlers.payment_verification import run_verification_bot  # noqa: E402
+from bot_config import BOT_TOKEN, PAYMENT_BOT_TOKEN  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -108,22 +109,39 @@ async def main() -> None:
     dp.startup.register(on_startup)
     dp.shutdown.register(close_db)
 
-    max_retries = 5
-    for attempt in range(1, max_retries + 1):
-        try:
-            logger.info("Starting bot (attempt %d/%d)...", attempt, max_retries)
-            await dp.start_polling(bot)
-            break
-        except Exception as exc:
-            logger.error("Bot startup failed (attempt %d/%d): %s", attempt, max_retries, exc)
-            if attempt < max_retries:
-                wait = 10 * attempt
-                logger.info("Retrying in %d seconds...", wait)
-                await asyncio.sleep(wait)
-            else:
-                logger.error("All %d startup attempts failed. Exiting.", max_retries)
-                await bot.session.close()
-                raise
+    # Create tasks for both bots
+    tasks = []
+
+    # Main bot task
+    async def run_main_bot():
+        max_retries = 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info("Starting main bot (attempt %d/%d)...", attempt, max_retries)
+                await dp.start_polling(bot)
+                break
+            except Exception as exc:
+                logger.error("Main bot startup failed (attempt %d/%d): %s", attempt, max_retries, exc)
+                if attempt < max_retries:
+                    wait = 10 * attempt
+                    logger.info("Retrying in %d seconds...", wait)
+                    await asyncio.sleep(wait)
+                else:
+                    logger.error("All %d startup attempts failed. Exiting.", max_retries)
+                    await bot.session.close()
+                    raise
+
+    tasks.append(run_main_bot())
+
+    # Verification bot task (if configured)
+    if PAYMENT_BOT_TOKEN:
+        logger.info("Payment verification bot (BOT_TOKEN3) configured. Starting...")
+        tasks.append(run_verification_bot())
+    else:
+        logger.warning("PAYMENT_BOT_TOKEN (BOT_TOKEN3) not set. Verification bot disabled.")
+
+    # Run all bots concurrently
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

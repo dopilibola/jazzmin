@@ -14,11 +14,13 @@ from bot.database.queries import (
 )
 from bot.keyboards.inline import language_inline, profile_inline
 from bot.keyboards.reply import main_menu_keyboard, phone_keyboard, profile_menu_keyboard
+from bot.services.google_sheets import sync_user_to_sheet
 from bot.states.forms import ProfileState
 from bot.utils.helpers import format_grave_date, format_price
 from bot.utils.texts import LANG_NAMES, get_status_label, get_text
 from bot.utils.validators import is_valid_full_name, is_valid_phone, normalize_phone
-from apps.botapp.helpers import get_user_language as _get_lang
+from apps.botapp.helpers import get_user_language as _get_lang, save_user_profile
+from bot_config import GOOGLE_CREDENTIALS_PATH, SPREADSHEET_ID
 
 router = Router(name="profile")
 
@@ -144,10 +146,15 @@ async def show_profile_menu(message: Message, state: FSMContext) -> None:
     )
 )
 async def back_to_main_menu(message: Message) -> None:
-    """Return to main menu from profile section."""
-    lang = await _get_lang(message.from_user.id)
+    """Return to main menu — greet user by name."""
+    telegram_id = message.from_user.id
+    lang = await _get_lang(telegram_id)
+    # Ismi bilan murojat
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, telegram_id)
+    name = (user.full_name if user else None) or message.from_user.first_name or ""
     await message.answer(
-        get_text(lang, "main_menu"),
+        get_text(lang, "welcome_back", name=name),
         reply_markup=main_menu_keyboard(lang),
     )
 
@@ -159,10 +166,28 @@ async def back_to_main_menu(message: Message) -> None:
 
 @router.callback_query(lambda c: c.data == "profile:language")
 async def change_language(callback: CallbackQuery) -> None:
-    """Show language selection buttons."""
+    """Show language selection buttons (inline callback)."""
     await callback.answer()
     lang = await _get_lang(callback.from_user.id)
     await callback.message.edit_text(
+        get_text(lang, "choose_language"),
+        reply_markup=language_inline(),
+    )
+
+
+@router.message(
+    F.text.in_(
+        [
+            get_text("en", "btn_change_language"),
+            get_text("ru", "btn_change_language"),
+            get_text("uz", "btn_change_language"),
+        ]
+    )
+)
+async def change_language_reply(message: Message) -> None:
+    """Show language selection buttons (reply button)."""
+    lang = await _get_lang(message.from_user.id)
+    await message.answer(
         get_text(lang, "choose_language"),
         reply_markup=language_inline(),
     )
@@ -179,16 +204,23 @@ async def start_profile_update(callback: CallbackQuery, state: FSMContext) -> No
 
 @router.message(ProfileState.full_name, F.text)
 async def process_full_name(message: Message, state: FSMContext) -> None:
-    """Validate full name, save, ask for phone."""
+    """Validate full name, save to bot DB + Django, ask for phone."""
     if not is_valid_full_name(message.text or ""):
         lang = await _get_lang(message.from_user.id)
         await message.answer(get_text(lang, "invalid_name"))
         return
     full_name = (message.text or "").strip()
     telegram_id = message.from_user.id
+    username = message.from_user.username or ""
+
+    # Bot DB
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, full_name=full_name)
         await session.commit()
+
+    # Django DB
+    await save_user_profile(telegram_id, full_name=full_name, username=username)
+
     lang = await _get_lang(telegram_id)
     await state.set_state(ProfileState.phone)
     await message.answer(
@@ -226,12 +258,39 @@ async def process_phone_text(message: Message, state: FSMContext) -> None:
 async def _save_phone_and_finish(
     message: Message, state: FSMContext, phone: str
 ) -> None:
-    """Save phone, clear state, show profile menu."""
+    """Save phone, sync to Django + Google Sheets, clear state, show profile menu."""
     telegram_id = message.from_user.id
+    username = message.from_user.username or ""
+
+    # Bot DB
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, phone_number=phone)
         await session.commit()
+        user = await get_user_by_telegram_id(session, telegram_id)
+        full_name = user.full_name if user else ""
+
     lang = await _get_lang(telegram_id)
+
+    # Django DB (admin panel)
+    await save_user_profile(
+        telegram_id,
+        full_name=full_name,
+        phone_number=phone,
+        username=username,
+    )
+
+    # Google Sheets sync
+    if SPREADSHEET_ID and GOOGLE_CREDENTIALS_PATH:
+        await sync_user_to_sheet(
+            SPREADSHEET_ID,
+            GOOGLE_CREDENTIALS_PATH,
+            telegram_id=telegram_id,
+            full_name=full_name,
+            phone_number=phone,
+            username=username,
+            language=lang,
+        )
+
     await state.clear()
     await message.answer(
         get_text(lang, "profile_saved"),

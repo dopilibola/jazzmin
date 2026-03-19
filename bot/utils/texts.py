@@ -7,7 +7,8 @@ TEXTS: dict[str, dict[str, str]] = {
     "en": {
         # Start / Welcome
         "welcome": "Welcome to the Grave Care Service.\nPlease select your language:",
-        "welcome_short": "Welcome! How can we help you today?",
+        "welcome_short": "Dear user, the graves of your loved ones are places of lasting memory. We offer grave cleaning, care, and dignified maintenance of burial sites. Honouring those we have lost is our mission. Choose a service and place your order.",
+        "welcome_back": "Hello, {name}! Welcome back. Choose a service from the menu below.",
         "choose_language": "Please choose your language:",
         "language_selected": "Language selected.",
         "btn_change_language": "Change Language",
@@ -60,7 +61,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "btn_support": "Contact Support",
         "btn_rating": "Rate Work",
         "btn_about": "About Us",
-        "btn_back": "◀️ Back",
+        "btn_back": "⬅️ Back",
         "btn_cancel": "❌ Cancel",
         "btn_skip": "Skip",
         "btn_add_grave": "Add Grave",
@@ -69,6 +70,12 @@ TEXTS: dict[str, dict[str, str]] = {
         # Services
         "services_title": "Our Services",
         "btn_cleaning": "Cleaning",
+        "btn_basic_cleaning": "Basic Cleaning",
+        "btn_deep_cleaning": "Deep Cleaning",
+        "btn_full_maintenance": "Full Maintenance",
+        "btn_plant_flowers": "Plant Flowers",
+        "btn_watering_service": "Watering Service",
+        "btn_seasonal_care": "Seasonal Care",
         "section_grave_cleaning": "Grave Cleaning",
         "section_flowers": "Flowers",
         "section_grave_renewal": "Grave Renewal",
@@ -153,7 +160,15 @@ TEXTS: dict[str, dict[str, str]] = {
         "payment_online": "Online payment",
         "payment_transfer": "Bank transfer",
         "payment_transfer_btn": "Transfer to payment",
+        "payment_internal_btn": "🏦 Card (Internal)",
+        "payment_visa_btn": "💳 Visa",
         "payment_card_info": "Transfer to this card number (tap to copy):",
+        "payment_internal_card_info": "Transfer to this card:",
+        "payment_visa_card_info": "Transfer to Visa card:",
+        "select_grave_for_order": "Select a grave for this order:",
+        "btn_add_new_grave": "➕ Add New Grave",
+        "payment_verified": "✅ Your payment has been verified and accepted!\n\n🪦 Cemetery: {cemetery}\n👤 Deceased: {deceased}",
+        "payment_not_verified": "❌ Your payment was not verified. Please try again or contact support.\n\n🪦 Cemetery: {cemetery}\n👤 Deceased: {deceased}",
         "payment_send_receipt": "After payment, send a screenshot of your receipt here.",
         "payment_confirm_btn": "✓ Confirm",
         "payment_reject_btn": "✗ Reject",
@@ -208,7 +223,8 @@ TEXTS: dict[str, dict[str, str]] = {
     },
     "ru": {
         "welcome": "Добро пожаловать в сервис ухода за могилами.\nВыберите язык:",
-        "welcome_short": "Добро пожаловать! Чем можем помочь?",
+        "welcome_short": "Уважаемый пользователь, могилы ваших близких — это место вечной памяти. Мы предлагаем услуги по уборке, уходу и достойному содержанию захоронений. Уважение к ушедшим — наша миссия. Выберите услугу и оформите заказ.",
+        "welcome_back": "Здравствуйте, {name}! С возвращением. Выберите услугу из меню.",
         "choose_language": "Выберите язык:",
         "language_selected": "Язык выбран.",
         "btn_change_language": "Изменить язык",
@@ -259,7 +275,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "btn_support": "Связаться с поддержкой",
         "btn_rating": "Оценить работу",
         "btn_about": "О нас",
-        "btn_back": "◀️ Назад",
+        "btn_back": "⬅️ Назад",
         "btn_cancel": "❌ Отмена",
         "btn_skip": "Пропустить",
         "btn_add_grave": "Добавить могилу",
@@ -267,6 +283,12 @@ TEXTS: dict[str, dict[str, str]] = {
         "btn_main_menu": "◀️ Главное меню",
         "services_title": "Наши услуги",
         "btn_cleaning": "Уборка",
+        "btn_basic_cleaning": "Базовая уборка",
+        "btn_deep_cleaning": "Глубокая уборка",
+        "btn_full_maintenance": "Полное обслуживание",
+        "btn_plant_flowers": "Посадка цветов",
+        "btn_watering_service": "Полив",
+        "btn_seasonal_care": "Сезонный уход",
         "section_grave_cleaning": "Уборка могил",
         "section_flowers": "Цветы",
         "section_grave_renewal": "Обновление могилы",
@@ -341,7 +363,15 @@ TEXTS: dict[str, dict[str, str]] = {
         "payment_online": "Онлайн оплата",
         "payment_transfer": "Банковский перевод",
         "payment_transfer_btn": "Перейти к оплате",
+        "payment_internal_btn": "🏦 Карта (Внутренний)",
+        "payment_visa_btn": "💳 Visa",
         "payment_card_info": "Переведите на эту карту (нажмите, чтобы скопировать):",
+        "payment_internal_card_info": "Переведите на эту карту:",
+        "payment_visa_card_info": "Переведите на карту Visa:",
+        "select_grave_for_order": "Выберите могилу для этого заказа:",
+        "btn_add_new_grave": "➕ Добавить новую могилу",
+        "payment_verified": "✅ Ваш платёж подтверждён и принят!\n\n🪦 Кладбище: {cemetery}\n👤 Умерший: {deceased}",
+        "payment_not_verified": "❌ Ваш платёж не подтверждён. Попробуйте снова или обратитесь в поддержку.\n\n🪦 Кладбище: {cemetery}\n👤 Умерший: {deceased}",
         "payment_send_receipt": "После оплаты отправьте скриншот квитанции сюда.",
         "payment_confirm_btn": "✓ Подтвердить",
         "payment_reject_btn": "✗ Отклонить",
@@ -394,7 +424,8 @@ TEXTS: dict[str, dict[str, str]] = {
     },
     "uz": {
         "welcome": "Qabr parvarish xizmatiga xush kelibsiz.\nTilni tanlang:",
-        "welcome_short": "Xush kelibsiz! Bugun qanday yordam bera olamiz?",
+        "welcome_short": "Hurmatli foydalanuvchi, marhum yaqinlaringizning qabrlari abadiy xotira joyi. Biz qabr tozalash, parvarish qilish va yodgorlik joylarini qadrli saqlash xizmatini taklif qilamiz. Sevganlarimizga hurmat — bu bizning vazifamiz. Xizmatlardan birini tanlang va buyurtma bering.",
+        "welcome_back": "Assalomu alaykum, {name}! Xush kelibsiz. Quyidagi menyudan xizmatni tanlang.",
         "choose_language": "Tilni tanlang:",
         "language_selected": "Til tanlandi.",
         "btn_change_language": "Tilni o'zgartirish",
@@ -445,7 +476,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "btn_support": "Qo'llab-quvvatlash bilan bog'lanish",
         "btn_rating": "Ishni baholash",
         "btn_about": "Biz haqimizda",
-        "btn_back": "◀️ Orqaga",
+        "btn_back": "⬅️ Orqaga",
         "btn_cancel": "❌ Bekor qilish",
         "btn_skip": "O'tkazib yuborish",
         "btn_add_grave": "Qabr qo'shish",
@@ -453,6 +484,12 @@ TEXTS: dict[str, dict[str, str]] = {
         "btn_main_menu": "◀️ Asosiy menyu",
         "services_title": "Bizning xizmatlar",
         "btn_cleaning": "Tozalash",
+        "btn_basic_cleaning": "Asosiy tozalash",
+        "btn_deep_cleaning": "Chuqur tozalash",
+        "btn_full_maintenance": "To'liq parvarish",
+        "btn_plant_flowers": "Gul ekish",
+        "btn_watering_service": "Suv berish",
+        "btn_seasonal_care": "Mavsumiy parvarish",
         "section_grave_cleaning": "Qabr tozalash",
         "section_flowers": "Gullar",
         "section_grave_renewal": "Qabr yangilash",
@@ -527,7 +564,15 @@ TEXTS: dict[str, dict[str, str]] = {
         "payment_online": "Onlayn to'lov",
         "payment_transfer": "Bank o'tkazmasi",
         "payment_transfer_btn": "To'lovga o'tkazish",
+        "payment_internal_btn": "🏦 Karta (Ichki)",
+        "payment_visa_btn": "💳 Visa",
         "payment_card_info": "Ushbu karta raqamiga o'tkazing (nusxa olish uchun bosing):",
+        "payment_internal_card_info": "Ushbu kartaga o'tkazing:",
+        "payment_visa_card_info": "Visa kartaga o'tkazing:",
+        "select_grave_for_order": "Buyurtma uchun qabrni tanlang:",
+        "btn_add_new_grave": "➕ Yangi qabr qo'shish",
+        "payment_verified": "✅ To'lovingiz tasdiqlandi va qabul qilindi!\n\n🪦 Qabriston: {cemetery}\n👤 Marhum: {deceased}",
+        "payment_not_verified": "❌ To'lovingiz tasdiqlanmadi. Qaytadan urinib ko'ring yoki qo'llab-quvvatlash bilan bog'laning.\n\n🪦 Qabriston: {cemetery}\n👤 Marhum: {deceased}",
         "payment_send_receipt": "To'lovdan keyin kvitansiya skrinshotini shu yerga yuboring.",
         "payment_confirm_btn": "✓ Tasdiqlash",
         "payment_reject_btn": "✗ Rad etish",
@@ -595,6 +640,15 @@ def get_text(lang: str, key: str, **kwargs: Any) -> str:
     if kwargs:
         s = s.format(**kwargs)
     return s
+
+
+def get_all_button_texts(key: str) -> frozenset[str]:
+    """Return all translations for a button key (en, ru, uz). For F.text.in_() filters."""
+    return frozenset(
+        t for lang in ("en", "ru", "uz")
+        for t in (TEXTS[lang].get(key, ""),)
+        if t
+    )
 
 
 def get_status_label(lang: str, status: str) -> str:

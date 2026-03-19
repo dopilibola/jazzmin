@@ -85,14 +85,19 @@ GOOGLE_CREDENTIALS_PATH: str = os.getenv("GOOGLE_CREDENTIALS_PATH", "").strip()
 # Support link
 SUPPORT_LINK: str = os.getenv("SUPPORT_LINK", "").strip()
 
-# Payment card number
+# Payment card numbers
 PAYMENT_CARD_NUMBER: str = os.getenv("PAYMENT_CARD_NUMBER", "").strip()
+PAYMENT_CARD_INTERNAL: str = os.getenv("PAYMENT_CARD_INTERNAL", "").strip()
+PAYMENT_CARD_INTERNATIONAL: str = os.getenv("PAYMENT_CARD_INTERNATIONAL", "").strip()
 
 # Payment receipts group
 PAYMENT_GROUP_ID: str = os.getenv("PAYMENT_GROUP_ID", "").strip()
 
 # Payment channel
 PAYMENT_CHANNEL_ID: str = os.getenv("PAYMENT_CHANNEL_ID", "").strip()
+
+# Payment verification bot token (BOT_TOKEN3)
+PAYMENT_BOT_TOKEN: str = os.getenv("BOT_TOKEN3", "").strip()
 
 # Operator groups: district_id -> Telegram group chat ID (comma-separated pairs)
 def _parse_operator_groups() -> dict[int, int]:
