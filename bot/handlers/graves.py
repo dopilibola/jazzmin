@@ -1,9 +1,14 @@
 """
 Grave handlers: Add Grave (FSM), My Graves list.
 """
+import logging
+
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+
+logger = logging.getLogger(__name__)
 
 from bot.database.db import async_session_factory
 from bot.database.queries import (
@@ -32,6 +37,17 @@ from bot.utils.validators import is_valid_month, is_valid_year
 from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="graves")
+
+
+async def _safe_callback_answer(callback: CallbackQuery) -> None:
+    """Safely answer callback query, ignore if expired."""
+    try:
+        await _safe_callback_answer(callback)
+    except TelegramBadRequest as e:
+        if "query is too old" in str(e):
+            logger.warning("Callback query expired: %s", callback.data)
+        else:
+            raise
 
 
 async def _require_profile(telegram_id: int) -> tuple[bool, str | None]:
@@ -83,7 +99,7 @@ async def start_add_grave(message: Message, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:region:"))
 async def cb_grave_region(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected region -> show districts."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     region_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
     async with async_session_factory() as session:
@@ -104,7 +120,7 @@ async def cb_grave_region(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:district:"))
 async def cb_grave_district(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected district -> show cemeteries."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     district_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
     async with async_session_factory() as session:
@@ -127,7 +143,7 @@ async def cb_grave_district(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:cemetery:"))
 async def cb_grave_cemetery(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected cemetery -> ask deceased name."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     cemetery_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
     async with async_session_factory() as session:
@@ -144,7 +160,7 @@ async def cb_grave_cemetery(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data == "grave:back:district")
 async def cb_grave_back_district(callback: CallbackQuery, state: FSMContext) -> None:
     """Back from district to region."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     lang = (await state.get_data()).get("lang", "ru")
     async with async_session_factory() as session:
         regions = await get_regions(session)
@@ -159,7 +175,7 @@ async def cb_grave_back_district(callback: CallbackQuery, state: FSMContext) -> 
 @router.callback_query(lambda c: c.data == "grave:back:cemetery")
 async def cb_grave_back_cemetery(callback: CallbackQuery, state: FSMContext) -> None:
     """Back from cemetery to district."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     data = await state.get_data()
     region_id = data.get("region_id")
     lang = data.get("lang", "ru")
@@ -179,7 +195,7 @@ async def cb_grave_back_cemetery(callback: CallbackQuery, state: FSMContext) -> 
 @router.callback_query(lambda c: c.data == "grave:cancel")
 async def cb_grave_cancel(callback: CallbackQuery, state: FSMContext) -> None:
     """Cancel Add Grave flow."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     lang = (await state.get_data()).get("lang", "ru")
     await state.clear()
     await callback.message.answer(
@@ -213,7 +229,7 @@ async def process_deceased(message: Message, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:approx:birth:"))
 async def cb_grave_birth_choice(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected Aniq or Taxminan for birth -> ask year (or year only)."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     is_approx = callback.data.split(":")[-1] == "1"
     await state.update_data(birth_approximate=is_approx)
     lang = (await state.get_data()).get("lang", "ru")
@@ -262,7 +278,7 @@ async def process_birth_month(message: Message, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:approx:death:"))
 async def cb_grave_death_choice(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected Aniq or Taxminan for death -> ask year (or year only)."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     is_approx = callback.data.split(":")[-1] == "1"
     await state.update_data(death_approximate=is_approx)
     lang = (await state.get_data()).get("lang", "ru")
@@ -311,7 +327,7 @@ async def process_death_month(message: Message, state: FSMContext) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:rel:"))
 async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> None:
     """User selected relationship -> save grave."""
-    await callback.answer()
+    await _safe_callback_answer(callback)
     rel_part = callback.data.split(":")[-1]
     from bot.database.models import RELATIONSHIP_DEFAULT
 

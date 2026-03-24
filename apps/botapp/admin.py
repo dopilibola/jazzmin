@@ -10,11 +10,16 @@ from apps.botapp.models import (
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-    list_display = ("chat_id", "language", "created_at", "updated_at")
+    list_display = ("chat_id", "full_name", "phone_number", "username", "language", "created_at", "updated_at")
     list_filter = ("language",)
-    search_fields = ("chat_id",)
+    search_fields = ("chat_id", "full_name", "phone_number", "username")
     list_editable = ("language",)
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Telegram", {"fields": ("chat_id", "username", "language")}),
+        ("Profil", {"fields": ("full_name", "phone_number")}),
+        ("Sanalar", {"fields": ("created_at", "updated_at")}),
+    )
 
 
 # ---------------------------------------------------------------------------

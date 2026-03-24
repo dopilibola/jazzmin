@@ -6,7 +6,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from apps.botapp.helpers import get_user_language as _get_lang
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import back_to_main_keyboard
 from bot.utils.about_content import get_about_content
 from bot.utils.texts import get_text
 
@@ -23,10 +23,10 @@ router = Router(name="about")
     )
 )
 async def show_about(message: Message) -> None:
-    """Show about us content (from about_content module; can be moved to DB later)."""
+    """Show about us content with back button."""
     lang = await _get_lang(message.from_user.id)
     content = get_about_content(lang)
     await message.answer(
         content,
-        reply_markup=main_menu_keyboard(lang),
+        reply_markup=back_to_main_keyboard(lang),
     )

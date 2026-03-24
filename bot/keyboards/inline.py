@@ -51,14 +51,26 @@ def grave_approximate_inline(lang: str, prefix: str) -> InlineKeyboardMarkup:
 
 
 def relationship_inline(lang: str) -> InlineKeyboardMarkup:
-    """Relationship status selection for grave."""
-    from bot.database.models import RELATIONSHIP_CHOICES
-
+    """Relationship status selection for grave (translated)."""
+    # Relationship keys for translation
+    relationships = [
+        "grandmother", "grandfather", "mother", "father",
+        "brother", "sister", "uncle", "aunt", "other"
+    ]
     buttons = []
-    for rel in RELATIONSHIP_CHOICES:
-        buttons.append(
-            [InlineKeyboardButton(text=rel, callback_data=f"grave:rel:{rel}")]
+    row = []
+    for rel in relationships:
+        row.append(
+            InlineKeyboardButton(
+                text=get_text(lang, f"rel_{rel}"),
+                callback_data=f"grave:rel:{rel}",
+            )
         )
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
     buttons.append(
         [InlineKeyboardButton(text=get_text(lang, "btn_skip"), callback_data="grave:rel:skip")]
     )
@@ -137,15 +149,15 @@ def services_list_inline(
     services: list, lang: str, add_back: bool = False
 ) -> InlineKeyboardMarkup:
     """List of services with Order (direct order, no cart). add_back=True adds Back to Services."""
-    buttons = [
-        [
+    buttons = []
+    for s in services:
+        name = s.get_name(lang) if hasattr(s, 'get_name') else s.name
+        buttons.append([
             InlineKeyboardButton(
-                text=f"{s.name} — {format_price(s.price, lang)}",
+                text=f"{name} — {format_price(s.price, lang)}",
                 callback_data=f"svc:order:{s.id}",
             ),
-        ]
-        for s in services
-    ]
+        ])
     if add_back:
         buttons.append(
             [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="svc:main")]
@@ -177,15 +189,20 @@ def flowers_list_inline(
     flowers: list, lang: str, add_back: bool = False
 ) -> InlineKeyboardMarkup:
     """List of flowers with Order (direct order, no cart). Same as services_list_inline."""
-    buttons = [
-        [
+    buttons = []
+    for f in flowers:
+        # Icon based on plantable or not
+        icon = "🌱" if getattr(f, 'is_plantable', False) else "💐"
+        # Use total_price if available, otherwise price
+        price = getattr(f, 'total_price', f.price)
+        # Use localized name
+        name = f.get_name(lang) if hasattr(f, 'get_name') else f.name
+        buttons.append([
             InlineKeyboardButton(
-                text=f"{f.name} — {format_price(f.price, lang)}",
+                text=f"{icon} {name} — {format_price(price, lang)}",
                 callback_data=f"fl:order:{f.id}",
             ),
-        ]
-        for f in flowers
-    ]
+        ])
     if add_back:
         buttons.append(
             [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="fl:main")]
@@ -417,6 +434,78 @@ def receipt_verify_inline(order_id: int, user_telegram_id: int, grave_id: int = 
     )
 
 
+def order_take_inline(order_id: int) -> InlineKeyboardMarkup:
+    """Button to take an order (for workers in group)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📥 Buyurtma olindi",
+                    callback_data=f"order:take:{order_id}",
+                ),
+            ],
+        ]
+    )
+
+
+def photo_verify_inline(order_id: int, user_telegram_id: int, worker_telegram_id: int) -> InlineKeyboardMarkup:
+    """True/False buttons for photo verification in BOT_TOKEN3."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ True - Tasdiqlash",
+                    callback_data=f"photo:true:{order_id}:{user_telegram_id}:{worker_telegram_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="❌ False - Rad etish",
+                    callback_data=f"photo:false:{order_id}:{user_telegram_id}:{worker_telegram_id}",
+                ),
+            ],
+        ]
+    )
+
+
+def order_retry_inline(order_id: int, worker_telegram_id: int) -> InlineKeyboardMarkup:
+    """Cancel/Continue buttons for worker after rejection."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔄 Davom etish",
+                    callback_data=f"retry:continue:{order_id}:{worker_telegram_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🚫 Buyurtmadan voz kechish",
+                    callback_data=f"retry:cancel:{order_id}:{worker_telegram_id}",
+                ),
+            ],
+        ]
+    )
+
+
+def feedback_inline(order_id: int, lang: str) -> InlineKeyboardMarkup:
+    """Feedback buttons for customer after order completion."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="👍 Yaxshi",
+                    callback_data=f"feedback:good:{order_id}",
+                ),
+                InlineKeyboardButton(
+                    text="👎 Yomon",
+                    callback_data=f"feedback:bad:{order_id}",
+                ),
+            ],
+        ]
+    )
+
+
 def select_grave_for_order_inline(graves: list, lang: str, order_id: int) -> InlineKeyboardMarkup:
     """Select a grave for order, with Add New Grave as first option."""
     buttons = [
@@ -517,6 +606,48 @@ def rating_skip_comment_inline(lang: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text=get_text(lang, "rating_skip_comment"),
                     callback_data="rating:skip",
+                ),
+            ],
+        ]
+    )
+
+
+# -----------------------------------------------------------------------------
+# User Submission
+# -----------------------------------------------------------------------------
+
+
+def submission_relationship_inline(lang: str) -> InlineKeyboardMarkup:
+    """Relationship selection for user submission (translated)."""
+    relationships = [
+        "mother", "father", "grandmother", "grandfather",
+        "spouse", "sibling", "child", "relative", "friend", "other"
+    ]
+    buttons = []
+    row = []
+    for rel in relationships:
+        row.append(
+            InlineKeyboardButton(
+                text=get_text(lang, f"rel_{rel}"),
+                callback_data=f"rel:{rel}",
+            )
+        )
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def cancel_inline(lang: str) -> InlineKeyboardMarkup:
+    """Cancel button."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "btn_cancel"),
+                    callback_data="submission:cancel",
                 ),
             ],
         ]

@@ -99,6 +99,12 @@ PAYMENT_CHANNEL_ID: str = os.getenv("PAYMENT_CHANNEL_ID", "").strip()
 # Payment verification bot token (BOT_TOKEN3)
 PAYMENT_BOT_TOKEN: str = os.getenv("BOT_TOKEN3", "").strip()
 
+# Telegram group for order notifications
+TELEGRAM_GROUP: str = os.getenv("Telegram_group", "").strip()
+
+# Submission channel (for user submissions with photos)
+SUBMISSION_CHANNEL_ID: str = os.getenv("SUBMISSION_CHANNEL_ID", "").strip()
+
 # Operator groups: district_id -> Telegram group chat ID (comma-separated pairs)
 def _parse_operator_groups() -> dict[int, int]:
     raw = os.getenv("OPERATOR_GROUPS", "").strip()

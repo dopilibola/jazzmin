@@ -1,22 +1,24 @@
 """
 Payment verification bot handler (BOT_TOKEN3).
-Handles True/False callbacks for payment receipts.
+Handles True/False callbacks for payment receipts and photo verification.
 """
 import asyncio
 import logging
 import socket
+from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InputMediaPhoto
 
 from bot.database.db import async_session_factory
 from bot.database.queries import get_order_by_id, update_order_status, get_grave_by_id
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
 from bot.utils.texts import get_text
-from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN
+from bot.keyboards.inline import order_retry_inline, feedback_inline
+from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN, TELEGRAM_GROUP
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +79,25 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                     chat_id=user_telegram_id,
                     text=get_text(user_lang, "payment_verified", cemetery=cemetery, deceased=deceased),
                 )
+
+                # Send order to Telegram group for workers (ONLY services, not flowers)
+                from bot.handlers.order_workflow import send_order_to_group
+
+                # Check if order contains services (not just flowers)
+                is_service = False
+                if order.items:
+                    for item in order.items:
+                        if item.item_type == "service":
+                            is_service = True
+                            break
+
+                grave = None
+                if grave_id and user_id:
+                    grave = await get_grave_by_id(session, grave_id, user_id)
+
+                # Only send to group if it's a service order
+                await send_order_to_group(main_bot, order, grave, is_service=is_service)
+
                 await main_bot.session.close()
             except Exception as e:
                 logger.error(f"Failed to notify user {user_telegram_id}: {e}")
@@ -114,6 +135,128 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 caption=callback.message.caption + "\n\n❌ RAD ETILDI",
                 reply_markup=None,
             )
+
+
+# -----------------------------------------------------------------------------
+# Photo verification callbacks (True/False for worker photos)
+# -----------------------------------------------------------------------------
+
+
+@verification_router.callback_query(lambda c: c.data and c.data.startswith("photo:"))
+async def photo_verification_callback(callback: CallbackQuery) -> None:
+    """Handle photo verification True/False from BOT_TOKEN3."""
+    await callback.answer()
+
+    parts = callback.data.split(":")
+    if len(parts) < 5:
+        return
+
+    action = parts[1]  # "true" or "false"
+    order_id = int(parts[2])
+    user_telegram_id = int(parts[3])
+    worker_telegram_id = int(parts[4])
+
+    # Import here to avoid circular import
+    from bot.handlers.order_workflow import _photo_uploads
+
+    data = _photo_uploads.get(order_id, {})
+    cemetery = data.get("cemetery", "—")
+    deceased = data.get("deceased", "—")
+    worker_username = data.get("worker_username", "—")
+
+    async with async_session_factory() as session:
+        order = await get_order_by_id(session, order_id)
+        if not order:
+            await callback.message.edit_text("Buyurtma topilmadi")
+            return
+
+        if action == "true":
+            # Approved - send photos to customer
+            order.status = "completed"
+            await session.commit()
+
+            # Send photos to customer via main bot
+            if user_telegram_id and order.photo1_file_id and order.photo2_file_id:
+                try:
+                    main_session = AiohttpSession()
+                    main_session._connector_init["family"] = socket.AF_INET
+                    main_bot = Bot(
+                        token=BOT_TOKEN,
+                        session=main_session,
+                        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                    )
+
+                    user_lang = order.user.language if order.user else "uz"
+
+                    # Send photos
+                    media = [
+                        InputMediaPhoto(
+                            media=order.photo1_file_id,
+                            caption=f"✅ Buyurtma #{order_id} bajarildi!\n\n"
+                                    f"🏛 {cemetery}\n🪦 {deceased}"
+                        ),
+                        InputMediaPhoto(media=order.photo2_file_id),
+                    ]
+                    await main_bot.send_media_group(chat_id=user_telegram_id, media=media)
+
+                    # Ask for feedback
+                    await main_bot.send_message(
+                        chat_id=user_telegram_id,
+                        text=get_text(user_lang, "feedback_request"),
+                        reply_markup=feedback_inline(order_id, user_lang),
+                    )
+
+                    # Notify worker in group
+                    if TELEGRAM_GROUP:
+                        await main_bot.send_message(
+                            chat_id=int(TELEGRAM_GROUP),
+                            text=f"@{worker_username} ✅ Buyurtma #{order_id} tasdiqlandi! Rahmat!"
+                        )
+
+                    await main_bot.session.close()
+                except Exception as e:
+                    logger.error(f"Failed to send photos to customer: {e}")
+
+            # Update admin message
+            await callback.message.edit_text(
+                callback.message.text + "\n\n✅ TASDIQLANDI - Mijozga yuborildi"
+            )
+
+            # Clean up
+            _photo_uploads.pop(order_id, None)
+
+        else:  # action == "false"
+            # Rejected - send back to worker with options
+            order.status = "rejected"
+            order.retry_deadline = datetime.utcnow() + timedelta(hours=2)
+            order.retry_reminder_sent = False
+            await session.commit()
+
+            # Update admin message
+            await callback.message.edit_text(
+                callback.message.text + "\n\n❌ RAD ETILDI - Ishchiga qaytarildi"
+            )
+
+            # Notify worker in group with buttons
+            if TELEGRAM_GROUP:
+                try:
+                    main_session = AiohttpSession()
+                    main_session._connector_init["family"] = socket.AF_INET
+                    main_bot = Bot(
+                        token=BOT_TOKEN,
+                        session=main_session,
+                        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                    )
+                    await main_bot.send_message(
+                        chat_id=int(TELEGRAM_GROUP),
+                        text=f"@{worker_username} ❌ Buyurtma #{order_id} rad etildi!\n\n"
+                             f"🏛 {cemetery} - {deceased}\n\n"
+                             f"⏰ 2 soat ichida qaror qabul qiling:",
+                        reply_markup=order_retry_inline(order_id, worker_telegram_id)
+                    )
+                    await main_bot.session.close()
+                except Exception as e:
+                    logger.error(f"Failed to notify worker: {e}")
 
 
 async def run_verification_bot():

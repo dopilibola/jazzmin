@@ -4,7 +4,7 @@ Clean schema: User, Service, Flower, CartItem, Order, OrderItem.
 """
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -161,7 +161,7 @@ class FlowerCategory(Base):
 
 
 class FlowerProduct(Base):
-    """Flower product: image, name, description, price."""
+    """Flower product: image, name, description, price, delivery, planting."""
 
     __tablename__ = "flower_products"
 
@@ -176,6 +176,9 @@ class FlowerProduct(Base):
     description_ru: Mapped[str] = mapped_column(Text, default="", nullable=False)
     description_uz: Mapped[str] = mapped_column(Text, default="", nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
+    delivery_fee: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_plantable: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    planting_fee: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     image_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     category: Mapped["FlowerCategory"] = relationship(
@@ -187,6 +190,14 @@ class FlowerProduct(Base):
 
     def get_description(self, lang: str) -> str:
         return getattr(self, f"description_{lang}", self.description_en)
+
+    @property
+    def total_price(self) -> int:
+        """Jami: narx + dastafka + ekish (agar ekiladigan bo'lsa)"""
+        total = self.price + self.delivery_fee
+        if self.is_plantable:
+            total += self.planting_fee
+        return total
 
 
 # -----------------------------------------------------------------------------
@@ -337,7 +348,29 @@ class Order(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
 
+    # Order assignment tracking
+    grave_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("graves.id", ondelete="SET NULL"), nullable=True
+    )
+    assigned_telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    assigned_username: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Photo uploads
+    photo1_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    photo2_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    photos_uploaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Retry after rejection
+    retry_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    retry_reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Customer feedback
+    feedback: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     user: Mapped["User"] = relationship("User", back_populates="orders")
+    grave: Mapped["Grave | None"] = relationship("Grave", lazy="selectin")
     region: Mapped["Region | None"] = relationship("Region", lazy="selectin")
     district: Mapped["District | None"] = relationship("District", lazy="selectin")
     cemetery: Mapped["Cemetery | None"] = relationship("Cemetery", lazy="selectin")

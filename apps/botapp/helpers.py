@@ -90,6 +90,66 @@ async def save_user_language(chat_id: int, language: str) -> None:
     _lang_cache.set(str(chat_id), language)
 
 
+async def save_user_profile(
+    chat_id: int,
+    *,
+    full_name: str | None = None,
+    phone_number: str | None = None,
+    username: str | None = None,
+    language: str | None = None,
+) -> None:
+    """
+    Save/update user profile in Django DB (single source of truth).
+    Only provided (non-None) fields are updated.
+    """
+
+    @_to_async
+    def _save():
+        from apps.botapp.models import TelegramUser
+
+        defaults = {}
+        if full_name is not None:
+            defaults["full_name"] = full_name
+        if phone_number is not None:
+            defaults["phone_number"] = phone_number
+        if username is not None:
+            defaults["username"] = username
+        if language is not None:
+            defaults["language"] = language
+        if not defaults:
+            return
+        TelegramUser.objects.update_or_create(
+            chat_id=chat_id,
+            defaults=defaults,
+        )
+
+    await _save()
+    if language is not None:
+        _lang_cache.set(str(chat_id), language)
+
+
+async def get_user_profile(chat_id: int) -> dict | None:
+    """Get full user profile from Django DB. Returns dict or None."""
+
+    @_to_async
+    def _fetch():
+        from apps.botapp.models import TelegramUser
+
+        try:
+            u = TelegramUser.objects.get(chat_id=chat_id)
+            return {
+                "chat_id": u.chat_id,
+                "full_name": u.full_name,
+                "phone_number": u.phone_number,
+                "username": u.username,
+                "language": u.language,
+            }
+        except TelegramUser.DoesNotExist:
+            return None
+
+    return await _fetch()
+
+
 async def user_exists(chat_id: int) -> bool:
     """Check if a TelegramUser record exists for this chat_id."""
 
@@ -135,84 +195,33 @@ async def get_service_by_pk(service_id: int):
 
 
 # ---------------------------------------------------------------------------
-# Catalog: Flower categories & products (NO cache — always fresh from DB)
+# Catalog: Flowers — uses apps.catalog.models.Flower (NO cache)
 # ---------------------------------------------------------------------------
 
 
-async def get_active_flower_categories() -> list:
-    """Return all active flower categories. Always fresh."""
+async def get_active_flowers() -> list:
+    """Return all active flowers from Django DB. Always fresh."""
 
     @_to_async
     def _fetch():
-        from apps.botapp.models import CatalogFlowerCategory
+        from apps.catalog.models import Flower
 
-        return list(
-            CatalogFlowerCategory.objects.filter(is_active=True)
-            .order_by("sort_order", "name_en")
-        )
+        return list(Flower.objects.filter(is_active=True).order_by("name"))
 
     return await _fetch()
 
 
-async def get_flower_category_by_pk(category_id: int):
-    """Return a single flower category by pk, or None."""
+async def get_flower_by_pk(flower_id: int):
+    """Return a single flower by primary key, or None."""
 
     @_to_async
     def _fetch():
-        from apps.botapp.models import CatalogFlowerCategory
+        from apps.catalog.models import Flower
 
         try:
-            return CatalogFlowerCategory.objects.get(pk=category_id)
-        except CatalogFlowerCategory.DoesNotExist:
+            return Flower.objects.get(pk=flower_id)
+        except Flower.DoesNotExist:
             return None
-
-    return await _fetch()
-
-
-async def get_active_flower_products(category_id: int) -> list:
-    """Return active flower products for a given category. Always fresh."""
-
-    @_to_async
-    def _fetch():
-        from apps.botapp.models import CatalogFlowerProduct
-
-        return list(
-            CatalogFlowerProduct.objects.filter(
-                category_id=category_id,
-                is_active=True,
-            ).order_by("name_en")
-        )
-
-    return await _fetch()
-
-
-async def get_flower_product_by_pk(product_id: int):
-    """Return a single flower product by pk, or None."""
-
-    @_to_async
-    def _fetch():
-        from apps.botapp.models import CatalogFlowerProduct
-
-        try:
-            return CatalogFlowerProduct.objects.get(pk=product_id)
-        except CatalogFlowerProduct.DoesNotExist:
-            return None
-
-    return await _fetch()
-
-
-async def get_all_active_flower_products() -> list:
-    """Return ALL active flower products across all categories. Always fresh."""
-
-    @_to_async
-    def _fetch():
-        from apps.botapp.models import CatalogFlowerProduct
-
-        return list(
-            CatalogFlowerProduct.objects.filter(is_active=True)
-            .select_related("category")
-            .order_by("category__sort_order", "name_en")
-        )
 
     return await _fetch()
 

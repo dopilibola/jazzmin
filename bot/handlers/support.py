@@ -1,10 +1,11 @@
 """
-Support: redirect user to support link (from env SUPPORT_LINK).
+Support: show direct link to support personal chat.
 """
 from aiogram import F, Router
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from apps.botapp.helpers import get_user_language as _get_lang
+from bot.keyboards.reply import back_to_main_keyboard
 from bot.utils.texts import get_text
 
 from bot_config import SUPPORT_LINK
@@ -22,7 +23,7 @@ router = Router(name="support")
     )
 )
 async def show_support_link(message: Message) -> None:
-    """Show support link - user clicks to open (redirect to link from env)."""
+    """Show support personal chat link."""
     lang = await _get_lang(message.from_user.id)
     if SUPPORT_LINK:
         kb = InlineKeyboardMarkup(
@@ -30,6 +31,12 @@ async def show_support_link(message: Message) -> None:
                 [InlineKeyboardButton(text=get_text(lang, "btn_support"), url=SUPPORT_LINK)],
             ]
         )
-        await message.answer(get_text(lang, "support_link_message"), reply_markup=kb)
+        await message.answer(
+            get_text(lang, "support_link_message"),
+            reply_markup=kb,
+        )
     else:
-        await message.answer(get_text(lang, "support_link_not_configured"))
+        await message.answer(
+            get_text(lang, "support_link_not_configured"),
+            reply_markup=back_to_main_keyboard(lang),
+        )

@@ -13,7 +13,7 @@ from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 
 from bot.database.db import async_session_factory
 from bot.database.queries import get_user_by_telegram_id
-from bot.states.forms import RegistrationState
+from bot.states.forms import GraveState, RegistrationState
 from bot.utils.texts import get_text
 
 _reg_cache: dict[int, tuple[float, bool]] = {}
@@ -21,7 +21,8 @@ _REG_TTL = 120.0
 
 
 def _is_registered(user) -> bool:
-    return user and user.full_name and user.phone_number
+    """Check if user is registered (name only required, phone optional)."""
+    return user and user.full_name
 
 
 def _check_reg_cache(user_id: int) -> bool | None:
@@ -38,6 +39,11 @@ def _set_reg_cache(user_id: int, registered: bool) -> None:
 def invalidate_reg_cache(user_id: int) -> None:
     """Call after registration completes to force next check from DB."""
     _reg_cache.pop(user_id, None)
+
+
+def clear_all_reg_cache() -> None:
+    """Clear entire registration cache."""
+    _reg_cache.clear()
 
 
 def _get_event_and_user(update: Update) -> tuple[Message | CallbackQuery | None, int | None, int | None]:
@@ -93,7 +99,8 @@ class RegistrationMiddleware(BaseMiddleware):
             key = StorageKey(bot_id=bot.id, chat_id=chat_id, user_id=user_id)
             fsm = FSMContext(storage=dp.storage, key=key)
             current = await fsm.get_state()
-            if current and RegistrationState.__name__ in (current or ""):
+            # Allow registration and grave adding flows
+            if current and (RegistrationState.__name__ in current or GraveState.__name__ in current):
                 return await handler(event, data)
 
         # DB check (only if cache miss)

@@ -1,9 +1,13 @@
 """
 Payment flow: select method, upload receipt screenshot.
 """
+import logging
+
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, PhotoSize
+
+logger = logging.getLogger(__name__)
 
 from bot.database.db import async_session_factory
 from bot.database.queries import (
@@ -13,6 +17,7 @@ from bot.database.queries import (
     update_order_status,
     list_user_graves,
     get_grave_by_id,
+    update_order_grave,
 )
 from bot.keyboards.inline import payment_methods_inline, receipt_confirm_reject_inline, receipt_verify_inline, select_grave_for_order_inline
 from bot.keyboards.reply import main_menu_keyboard
@@ -26,6 +31,7 @@ from bot_config import (
     PAYMENT_CHANNEL_ID,
     PAYMENT_GROUP_ID,
     PAYMENT_BOT_TOKEN,
+    TELEGRAM_GROUP,
 )
 from bot.utils.texts import get_text
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
@@ -91,6 +97,9 @@ async def payment_grave_selected_callback(callback: CallbackQuery, state: FSMCon
         grave = None
         if user:
             grave = await get_grave_by_id(session, grave_id, user.id)
+            # Save grave_id to order
+            await update_order_grave(session, order_id, grave_id)
+            await session.commit()
 
     if not order:
         return
@@ -193,28 +202,30 @@ async def payment_method_callback(callback: CallbackQuery, state: FSMContext) ->
 
 @router.message(PaymentState.upload_receipt, F.photo)
 async def payment_receipt_upload(message: Message, state: FSMContext) -> None:
-    """Receive receipt screenshot."""
-    from aiogram import Bot
-
+    """Receive receipt screenshot - simplified version."""
     data = await state.get_data()
     order_id = data.get("payment_order_id")
-    method = data.get("payment_method")
+    method = data.get("payment_method", "card")
     grave_id = data.get("selected_grave_id")
 
-    if not order_id or not method:
+    lang = await _get_lang(message.from_user.id)
+
+    if not order_id:
         await state.clear()
+        await message.answer(get_text(lang, "cart_empty"))
         return
 
     # Get largest photo file_id
     photo: PhotoSize = message.photo[-1]
     file_id = photo.file_id
-    lang = await _get_lang(message.from_user.id)
 
     grave = None
     async with async_session_factory() as session:
         user = await get_user_by_telegram_id(session, message.from_user.id)
         if not user:
+            await state.clear()
             return
+
         order = await get_order_by_id(session, order_id)
         if not order or order.user_id != user.id:
             await message.answer(get_text(lang, "cart_empty"))
@@ -227,89 +238,64 @@ async def payment_receipt_upload(message: Message, state: FSMContext) -> None:
 
         await update_order_receipt(session, order_id, file_id, method)
         await session.commit()
+
     await state.clear()
 
     # Payment method label
-    method_label = "Karta (Ichki)" if method == "internal" else "Visa"
+    method_label = "Humo/Uzcard" if method == "internal" else "Visa"
 
     # Grave info for caption
     grave_info = ""
     if grave:
         grave_info = (
-            f"\n🪦 Qabr ma'lumotlari:\n"
-            f"   Marhum: {grave.deceased_full_name or '—'}\n"
-            f"   Qabriston: {grave.cemetery or '—'}\n"
-            f"   Tug'ilgan: {grave.birth_year or '—'}\n"
-            f"   Vafot: {grave.death_year or '—'}\n"
+            f"\n🪦 {grave.deceased_full_name or '—'}\n"
+            f"   📍 {grave.cemetery or '—'}"
         )
 
     # User contact info
     username = f"@{message.from_user.username}" if message.from_user.username else "—"
 
-    # Forward receipt to payment group with confirm/reject buttons
-    if PAYMENT_GROUP_ID:
-        try:
-            group_id = int(PAYMENT_GROUP_ID)
-            caption = (
-                f"💳 To'lov kvitansiyasi\n\n"
-                f"📋 Buyurtma #{order.id}\n"
-                f"👤 Ism: {user.full_name or '—'}\n"
-                f"📞 Telefon: {user.phone_number or '—'}\n"
-                f"📱 Username: {username}\n"
-                f"💰 Jami: {format_price(order.total_price, lang)}\n"
-                f"💳 To'lov turi: {method_label}"
-                f"{grave_info}\n"
-                f"📅 {order.created_at.strftime('%d.%m.%Y %H:%M') if order.created_at else ''}"
-            )
-            await message.bot.send_photo(
-                chat_id=group_id,
-                photo=file_id,
-                caption=caption,
-                reply_markup=receipt_confirm_reject_inline(lang, order_id),
-            )
-        except (ValueError, Exception):
-            pass
+    # Build caption
+    caption = (
+        f"💳 To'lov cheki\n\n"
+        f"📋 Buyurtma: #{order.id}\n"
+        f"👤 {user.full_name or '—'}\n"
+        f"📞 {user.phone_number or '—'}\n"
+        f"📱 {username}\n"
+        f"💰 {format_price(order.total_price, lang)}\n"
+        f"💳 {method_label}"
+        f"{grave_info}"
+    )
 
-    # Forward receipt to BOT_TOKEN3 with True/False buttons for verification
+    # Send receipt to BOT_TOKEN3 with True/False buttons
     if PAYMENT_BOT_TOKEN:
         try:
+            from aiogram import Bot
+            from aiogram.types import BufferedInputFile
+
             verification_bot = Bot(token=PAYMENT_BOT_TOKEN)
-            # Download the photo from the main bot and send to verification bot
+
+            # Download photo and send via verification bot
             file = await message.bot.get_file(file_id)
             file_bytes = await message.bot.download_file(file.file_path)
 
-            caption = (
-                f"💳 To'lov kvitansiyasi\n\n"
-                f"📋 Buyurtma #{order.id}\n"
-                f"👤 Ism: {user.full_name or '—'}\n"
-                f"📞 Telefon: {user.phone_number or '—'}\n"
-                f"📱 Username: {username}\n"
-                f"🆔 Telegram ID: {message.from_user.id}\n"
-                f"💰 Jami: {format_price(order.total_price, lang)}\n"
-                f"💳 To'lov turi: {method_label}"
-                f"{grave_info}\n"
-                f"📅 {order.created_at.strftime('%d.%m.%Y %H:%M') if order.created_at else ''}"
-            )
-
-            # Send to the same admin chat
-            from bot_config import ADMIN_IDS
-            from aiogram.types import BufferedInputFile
-
+            # Send to each admin
             for admin_id in ADMIN_IDS:
                 try:
+                    file_bytes.seek(0)
                     await verification_bot.send_photo(
                         chat_id=admin_id,
                         photo=BufferedInputFile(file_bytes.read(), filename="receipt.jpg"),
                         caption=caption,
                         reply_markup=receipt_verify_inline(order_id, message.from_user.id, grave_id or 0),
                     )
-                    file_bytes.seek(0)  # Reset for next admin
-                except Exception:
-                    pass
+                    logger.info(f"Receipt sent to admin {admin_id} via BOT_TOKEN3")
+                except Exception as e:
+                    logger.error(f"Failed to send to admin {admin_id}: {e}")
 
             await verification_bot.session.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to send receipt via BOT_TOKEN3: {e}")
 
     await message.answer(
         get_text(lang, "payment_receipt_received"),

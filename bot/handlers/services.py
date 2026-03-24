@@ -1,6 +1,5 @@
 """
 Services section: list grave cleaning services, order.
-All service data is fetched dynamically from Django Admin-managed database.
 """
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
@@ -12,15 +11,14 @@ from apps.botapp.helpers import (
     get_user_language as _get_lang,
 )
 from bot.database.db import async_session_factory
-from bot.database.queries import (
-    create_or_update_user,
-    get_user_by_telegram_id,
-)
+from bot.database.queries import get_user_by_telegram_id
 from bot.keyboards.inline import services_list_inline
-from bot.keyboards.reply import main_menu_keyboard
-from bot.utils.texts import get_text
+from bot.keyboards.reply import back_to_main_keyboard
+from bot.utils.texts import get_text, get_all_button_texts
 
 router = Router(name="services")
+
+SERVICES_BUTTON_TEXTS = get_all_button_texts("btn_services")
 
 
 async def _build_services_text(lang: str):
@@ -30,35 +28,38 @@ async def _build_services_text(lang: str):
         return None, None
     text = get_text(lang, "services_title") + "\n\n"
     for s in services:
-        desc = (s.description or "")[:80]
-        text += f"• {s.name} — {format_price(s.price, lang)}\n"
+        name = s.get_name(lang) if hasattr(s, 'get_name') else s.name
+        desc = s.get_description(lang) if hasattr(s, 'get_description') else (s.description or "")
+        desc = desc[:80] if desc else ""
+        text += f"• {name} — {format_price(s.price, lang)}\n"
         if desc:
             text += f"  {desc}\n"
+        text += "\n"
     return text, services
 
 
-@router.message(
-    F.text.in_(
-        [
-            get_text("en", "btn_services"),
-            get_text("ru", "btn_services"),
-            get_text("uz", "btn_services"),
-        ]
-    )
-)
-async def show_services(message: Message) -> None:
-    """Show cleaning services directly (no Flowers in Services)."""
-    lang = await _get_lang(message.from_user.id)
+async def _send_services_content(message: Message, lang: str) -> None:
+    """Send services list with inline buttons + back keyboard."""
+    kb = back_to_main_keyboard(lang)
     text, services = await _build_services_text(lang)
     if not services:
         await message.answer(
             get_text(lang, "services_title") + "\n\n" + get_text(lang, "cart_empty"),
+            reply_markup=kb,
         )
         return
     await message.answer(
         text,
         reply_markup=services_list_inline(services, lang, add_back=False),
     )
+
+
+@router.message(F.text.in_(SERVICES_BUTTON_TEXTS))
+async def show_services(message: Message) -> None:
+    """Services pressed: show service list + back button."""
+    lang = await _get_lang(message.from_user.id)
+    await message.answer("⬇️", reply_markup=back_to_main_keyboard(lang))
+    await _send_services_content(message, lang)
 
 
 @router.callback_query(lambda c: c.data and c.data == "svc:main")

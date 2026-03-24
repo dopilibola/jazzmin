@@ -12,6 +12,9 @@ LANGUAGE_CHOICES = [
 
 class TelegramUser(models.Model):
     chat_id = models.BigIntegerField(unique=True, db_index=True)
+    full_name = models.CharField("Ism / Full Name", max_length=200, blank=True, default="")
+    phone_number = models.CharField("Telefon / Phone", max_length=30, blank=True, default="")
+    username = models.CharField("Telegram username", max_length=100, blank=True, default="")
     language = models.CharField(
         max_length=5,
         choices=LANGUAGE_CHOICES,
@@ -25,6 +28,8 @@ class TelegramUser(models.Model):
         verbose_name_plural = "Telegram Users"
 
     def __str__(self):
+        if self.full_name:
+            return f"{self.full_name} ({self.chat_id})"
         return f"{self.chat_id} ({self.language})"
 
 

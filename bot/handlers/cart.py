@@ -116,6 +116,6 @@ async def cart_callback(callback: CallbackQuery, state: FSMContext) -> None:
             if not items:
                 await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
                 return
-            from bot.handlers.flowers import _start_flower_checkout_from_cart
+            from bot.handlers.checkout import _start_checkout
 
-            await _start_flower_checkout_from_cart(callback, state)
+            await _start_checkout(callback, state)

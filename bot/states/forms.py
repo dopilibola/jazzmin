@@ -106,3 +106,13 @@ class OrderCheckoutState(StatesGroup):
     birth_year = State()
     death_year = State()
     confirm = State()
+
+
+class UserSubmissionState(StatesGroup):
+    """User submission flow: name, phone, relationship, 2 photos."""
+
+    full_name = State()
+    phone = State()
+    relationship = State()
+    photo_1 = State()
+    photo_2 = State()

@@ -18,7 +18,7 @@ from aiogram.fsm.storage.memory import MemoryStorage  # noqa: E402
 
 from bot.database.db import close_db, init_db  # noqa: E402
 from bot.middlewares.language import LanguageMiddleware  # noqa: E402
-from bot.middlewares.registration import RegistrationMiddleware  # noqa: E402
+from bot.middlewares.registration import RegistrationMiddleware, clear_all_reg_cache  # noqa: E402
 from bot.middlewares.retry import RetryMiddleware  # noqa: E402
 from bot.handlers import (  # noqa: E402
     about,
@@ -31,9 +31,11 @@ from bot.handlers import (  # noqa: E402
     profile,
     services,
     start,
+    submission,
     support,
 )
 from bot.handlers.payment_verification import run_verification_bot  # noqa: E402
+from bot.handlers.order_workflow import router as order_workflow_router, start_reminder_task  # noqa: E402
 from bot_config import BOT_TOKEN, PAYMENT_BOT_TOKEN  # noqa: E402
 
 logging.basicConfig(
@@ -43,10 +45,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+_main_bot_instance = None
+
+
 async def on_startup() -> None:
-    """Initialize database and seed data."""
+    """Initialize database, seed data, and start reminder task."""
     await init_db()
     logger.info("Database initialized.")
+    # Clear registration cache on startup
+    clear_all_reg_cache()
+    logger.info("Registration cache cleared.")
+    # Start reminder task after DB is ready
+    if _main_bot_instance:
+        start_reminder_task(_main_bot_instance)
+        logger.info("Order reminder task started.")
 
 
 def _patch_telegram_dns():
@@ -72,6 +84,7 @@ def _patch_telegram_dns():
 
 async def main() -> None:
     """Run the bot."""
+    global _main_bot_instance
     import socket
 
     if not BOT_TOKEN:
@@ -91,6 +104,9 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
+    # Set global bot instance for reminder task
+    _main_bot_instance = bot
+
     dp = Dispatcher(storage=MemoryStorage())
     dp.update.outer_middleware(RetryMiddleware())
     dp.update.outer_middleware(LanguageMiddleware())
@@ -104,8 +120,10 @@ async def main() -> None:
     dp.include_router(checkout.router)
     dp.include_router(payment.router)
     dp.include_router(orders.router)
+    dp.include_router(submission.router)
     dp.include_router(support.router)
     dp.include_router(about.router)
+    dp.include_router(order_workflow_router)
     dp.startup.register(on_startup)
     dp.shutdown.register(close_db)
 

@@ -8,7 +8,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from apps.botapp.helpers import get_user_language, save_user_language, user_exists
+from apps.botapp.helpers import get_user_language, save_user_language, save_user_profile, user_exists
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     create_or_update_user,
@@ -18,7 +18,7 @@ from bot.database.queries import (
 )
 from bot.keyboards.inline import grave_regions_inline, language_inline
 from bot.keyboards.reply import main_menu_keyboard, phone_keyboard
-from bot.services.google_sheets import append_user_to_sheet
+from bot.services.google_sheets import sync_user_to_sheet
 from bot.states.forms import GraveState, RegistrationState
 from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_full_name, is_valid_phone, normalize_phone
@@ -28,8 +28,8 @@ router = Router(name="start")
 
 
 def _is_registered(user) -> bool:
-    """Check if user has completed registration (name + phone)."""
-    return user and user.full_name and user.phone_number
+    """Check if user has completed registration (name only)."""
+    return user and user.full_name
 
 
 async def _get_lang(telegram_id: int) -> str:
@@ -72,8 +72,10 @@ async def cmd_start(
             await session.commit()
             graves = await list_user_graves(session, user.id)
             if graves:
+                # Ismi bilan salomlashish
+                name = user.full_name or message.from_user.first_name or ""
                 await message.answer(
-                    get_text(lang, "welcome_short"),
+                    get_text(lang, "welcome_back", name=name),
                     reply_markup=main_menu_keyboard(lang),
                 )
                 return
@@ -92,6 +94,7 @@ async def _start_add_grave_flow(message: Message, state: FSMContext, lang: str) 
         regions = await get_regions(session)
     await state.set_state(GraveState.region)
     await state.update_data(lang=lang)
+    await message.answer(get_text(lang, "welcome_short"))
     await message.answer(
         get_text(lang, "grave_enter_region"),
         reply_markup=grave_regions_inline(regions, lang),
@@ -105,23 +108,47 @@ async def _start_add_grave_flow(message: Message, state: FSMContext, lang: str) 
 
 @router.message(RegistrationState.full_name, lambda m: m.text)
 async def process_registration_name(message: Message, state: FSMContext) -> None:
-    """Validate full name, save, ask for phone."""
+    """Validate full name, save, and complete registration."""
     if not is_valid_full_name(message.text or ""):
         lang = await _get_lang(message.from_user.id)
         await message.answer(get_text(lang, "invalid_name"))
         return
     full_name = (message.text or "").strip()
     telegram_id = message.from_user.id
+    username = message.from_user.username or ""
+    lang = await _get_lang(telegram_id)
+
+    # Save to bot SQLAlchemy DB
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, full_name=full_name)
         await session.commit()
-    await state.update_data(reg_full_name=full_name)
-    await state.set_state(RegistrationState.phone)
-    lang = await _get_lang(telegram_id)
-    await message.answer(
-        get_text(lang, "registration_phone"),
-        reply_markup=phone_keyboard(lang),
+
+    from bot.middlewares.registration import invalidate_reg_cache
+    invalidate_reg_cache(telegram_id)
+
+    # Save to Django DB
+    await save_user_profile(
+        telegram_id,
+        full_name=full_name,
+        username=username,
+        language=lang,
     )
+
+    # Sync to Google Sheets
+    if SPREADSHEET_ID and GOOGLE_CREDENTIALS_PATH:
+        await sync_user_to_sheet(
+            SPREADSHEET_ID,
+            GOOGLE_CREDENTIALS_PATH,
+            telegram_id=telegram_id,
+            full_name=full_name,
+            phone_number="",
+            username=username,
+            language=lang,
+        )
+
+    await state.clear()
+    await message.answer(get_text(lang, "registration_complete", name=full_name))
+    await _start_add_grave_flow(message, state, lang)
 
 
 @router.message(RegistrationState.phone, lambda m: m.contact)
@@ -151,8 +178,9 @@ async def process_registration_phone_text(message: Message, state: FSMContext) -
 
 
 async def _finish_registration(message: Message, state: FSMContext, phone: str) -> None:
-    """Save phone to DB, sync to Google Sheets, then start Add Grave flow."""
+    """Save phone to DB + Django + Google Sheets, then start Add Grave flow."""
     telegram_id = message.from_user.id
+    username = message.from_user.username or ""
     data = await state.get_data()
     full_name = data.get("reg_full_name", "")
     if not full_name:
@@ -160,6 +188,7 @@ async def _finish_registration(message: Message, state: FSMContext, phone: str) 
             user = await get_user_by_telegram_id(session, telegram_id)
             full_name = user.full_name if user else ""
 
+    # 1. Save to bot SQLAlchemy DB
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, phone_number=phone)
         await session.commit()
@@ -167,19 +196,30 @@ async def _finish_registration(message: Message, state: FSMContext, phone: str) 
     from bot.middlewares.registration import invalidate_reg_cache
     invalidate_reg_cache(telegram_id)
 
+    lang = await _get_lang(telegram_id)
+
+    # 2. Save to Django DB (admin panel — single source of truth)
+    await save_user_profile(
+        telegram_id,
+        full_name=full_name,
+        phone_number=phone,
+        username=username,
+        language=lang,
+    )
+
+    # 3. Sync to Google Sheets (mirror/copy)
     if SPREADSHEET_ID and GOOGLE_CREDENTIALS_PATH:
-        username = message.from_user.username
-        await append_user_to_sheet(
+        await sync_user_to_sheet(
             SPREADSHEET_ID,
             GOOGLE_CREDENTIALS_PATH,
             telegram_id=telegram_id,
             full_name=full_name,
             phone_number=phone,
             username=username,
+            language=lang,
         )
 
     await state.clear()
-    lang = await _get_lang(telegram_id)
     await message.answer(get_text(lang, "registration_complete"))
     await _start_add_grave_flow(message, state, lang)
 
@@ -209,8 +249,9 @@ async def callback_language(callback: CallbackQuery, state: FSMContext) -> None:
             graves = await list_user_graves(session, user.id)
             await callback.message.edit_text(get_text(lang, "language_selected"))
             if graves:
+                name = user.full_name or callback.from_user.first_name or ""
                 await callback.message.answer(
-                    get_text(lang, "welcome_short"),
+                    get_text(lang, "welcome_back", name=name),
                     reply_markup=main_menu_keyboard(lang),
                 )
                 return

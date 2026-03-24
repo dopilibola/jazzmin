@@ -32,3 +32,68 @@ async def run_migrations(engine: AsyncEngine) -> None:
                     pass
                 else:
                     logger.debug("Migration graves.%s: %s", col, e)
+
+        # Add order assignment and photo tracking columns to orders
+        order_columns = [
+            ("grave_id", "INTEGER", "NULL"),
+            ("assigned_telegram_id", "BIGINT", "NULL"),
+            ("assigned_username", "VARCHAR(100)", "NULL"),
+            ("assigned_at", "TIMESTAMP", "NULL"),
+            ("reminder_sent", "BOOLEAN", "FALSE"),
+            ("photo1_file_id", "VARCHAR(255)", "NULL"),
+            ("photo2_file_id", "VARCHAR(255)", "NULL"),
+            ("photos_uploaded_at", "TIMESTAMP", "NULL"),
+        ]
+        for col, col_type, default in order_columns:
+            try:
+                await conn.execute(
+                    text(f"ALTER TABLE orders ADD COLUMN {col} {col_type} DEFAULT {default}")
+                )
+                await conn.commit()
+                logger.info("Migration: added orders.%s", col)
+            except Exception as e:
+                err = str(e).lower()
+                if "duplicate" in err or "already exists" in err:
+                    pass
+                else:
+                    logger.debug("Migration orders.%s: %s", col, e)
+
+        # Add delivery_fee, is_plantable, planting_fee to flower_products
+        flower_columns = [
+            ("delivery_fee", "INTEGER", "0"),
+            ("is_plantable", "BOOLEAN", "FALSE"),
+            ("planting_fee", "INTEGER", "0"),
+        ]
+        for col, col_type, default in flower_columns:
+            try:
+                await conn.execute(
+                    text(f"ALTER TABLE flower_products ADD COLUMN {col} {col_type} DEFAULT {default}")
+                )
+                await conn.commit()
+                logger.info("Migration: added flower_products.%s", col)
+            except Exception as e:
+                err = str(e).lower()
+                if "duplicate" in err or "already exists" in err:
+                    pass
+                else:
+                    logger.debug("Migration flower_products.%s: %s", col, e)
+
+        # Add retry and feedback columns to orders
+        retry_columns = [
+            ("retry_deadline", "TIMESTAMP", "NULL"),
+            ("retry_reminder_sent", "BOOLEAN", "FALSE"),
+            ("feedback", "VARCHAR(20)", "NULL"),
+        ]
+        for col, col_type, default in retry_columns:
+            try:
+                await conn.execute(
+                    text(f"ALTER TABLE orders ADD COLUMN {col} {col_type} DEFAULT {default}")
+                )
+                await conn.commit()
+                logger.info("Migration: added orders.%s", col)
+            except Exception as e:
+                err = str(e).lower()
+                if "duplicate" in err or "already exists" in err:
+                    pass
+                else:
+                    logger.debug("Migration orders.%s: %s", col, e)

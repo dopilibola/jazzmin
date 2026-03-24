@@ -513,6 +513,40 @@ async def create_order_from_service(
     return order
 
 
+async def create_order_from_flower(
+    session,
+    user_id: int,
+    flower_id: int,
+    flower_title: str,
+    flower_price: int,
+    *,
+    full_name: str,
+    phone_number: str,
+) -> Order:
+    """Create order with single flower (no cart). Same pattern as create_order_from_service."""
+    order = Order(
+        user_id=user_id,
+        full_name=full_name,
+        phone_number=phone_number,
+        total_price=flower_price,
+        status=ORDER_STATUS_NEW,
+    )
+    session.add(order)
+    await session.flush()
+    oi = OrderItem(
+        order_id=order.id,
+        item_type="flower",
+        item_id=flower_id,
+        title=flower_title,
+        quantity=1,
+        price=flower_price,
+    )
+    session.add(oi)
+    await session.flush()
+    await session.refresh(order)
+    return order
+
+
 async def create_order_from_cart(
     session,
     user_id: int,
@@ -742,3 +776,110 @@ async def create_complaint(
     await session.flush()
     await session.refresh(msg)
     return msg
+
+
+# -----------------------------------------------------------------------------
+# Order Assignment and Photo Upload
+# -----------------------------------------------------------------------------
+
+
+async def assign_order(
+    session, order_id: int, telegram_id: int, username: str | None = None
+) -> Order | None:
+    """Assign an order to a worker."""
+    from datetime import datetime
+    stmt = select(Order).where(Order.id == order_id)
+    result = await session.execute(stmt)
+    order = result.scalars().first()
+    if order:
+        order.assigned_telegram_id = telegram_id
+        order.assigned_username = username
+        order.assigned_at = datetime.utcnow()
+        order.status = "in_progress"
+        await session.flush()
+    return order
+
+
+async def upload_order_photo(
+    session, order_id: int, photo_file_id: str
+) -> tuple[Order | None, int]:
+    """Upload a photo to order. Returns (order, photo_number 1 or 2)."""
+    from datetime import datetime
+    stmt = select(Order).where(Order.id == order_id)
+    result = await session.execute(stmt)
+    order = result.scalars().first()
+    if not order:
+        return None, 0
+
+    if not order.photo1_file_id:
+        order.photo1_file_id = photo_file_id
+        await session.flush()
+        return order, 1
+    elif not order.photo2_file_id:
+        order.photo2_file_id = photo_file_id
+        order.photos_uploaded_at = datetime.utcnow()
+        order.status = "completed"
+        await session.flush()
+        return order, 2
+    return order, 0  # Both photos already uploaded
+
+
+async def get_orders_needing_reminder(session, hours: int = 2) -> list[Order]:
+    """Get orders assigned more than N hours ago without reminder sent.
+
+    Default: 2 hours (for 3-hour deadline, reminder at 2h = 1h left).
+    """
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(hours=hours)
+    stmt = (
+        select(Order)
+        .where(
+            Order.assigned_at != None,
+            Order.assigned_at <= cutoff,
+            Order.reminder_sent == False,
+            Order.photo2_file_id == None,
+            Order.status.in_(["paid", "in_progress"]),
+        )
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def mark_reminder_sent(session, order_id: int) -> None:
+    """Mark reminder as sent for an order."""
+    stmt = select(Order).where(Order.id == order_id)
+    result = await session.execute(stmt)
+    order = result.scalars().first()
+    if order:
+        order.reminder_sent = True
+        await session.flush()
+
+
+async def get_overdue_orders(session, hours: int = 3) -> list[Order]:
+    """Get orders assigned more than N hours ago without 2 photos.
+
+    Default: 3 hours deadline.
+    """
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(hours=hours)
+    stmt = (
+        select(Order)
+        .where(
+            Order.assigned_at != None,
+            Order.assigned_at <= cutoff,
+            Order.photo2_file_id == None,
+            Order.status.in_(["paid", "in_progress"]),
+        )
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def update_order_grave(session, order_id: int, grave_id: int) -> None:
+    """Update order with grave_id."""
+    stmt = select(Order).where(Order.id == order_id)
+    result = await session.execute(stmt)
+    order = result.scalars().first()
+    if order:
+        order.grave_id = grave_id
+        await session.flush()
