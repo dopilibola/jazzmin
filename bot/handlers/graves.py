@@ -46,6 +46,7 @@ from bot.utils.helpers import format_grave_date
 from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_month, is_valid_year
 from apps.botapp.helpers import get_user_language as _get_lang
+from bot.services.google_sheets import log_grave as log_grave_to_sheets, log_user as log_user_to_sheets
 
 router = Router(name="graves")
 
@@ -376,7 +377,7 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
             await state.clear()
             await callback.message.answer(get_text(lang, "grave_cancelled"))
             return
-        await add_grave(
+        grave = await add_grave(
             session,
             user.id,
             region=data.get("region_name", ""),
@@ -392,6 +393,22 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
             relationship_status=relationship,
         )
         await session.commit()
+
+        # Log to Google Sheets
+        try:
+            await log_grave_to_sheets(
+                grave_id=grave.id,
+                telegram_id=telegram_id,
+                username=callback.from_user.username,
+                deceased_full_name=data.get("deceased_full_name", ""),
+                birth_year=data.get("birth_year"),
+                death_year=data.get("death_year"),
+                region=data.get("region_name", ""),
+                district=data.get("district_name", ""),
+                cemetery=data.get("cemetery_name", ""),
+            )
+        except Exception as e:
+            logger.error(f"Failed to log grave to Google Sheets: {e}")
 
     # Track grave complete
     await track_event(telegram_id, EVENT_GRAVE_COMPLETE)

@@ -82,6 +82,10 @@ SPREADSHEET_ID: str = os.getenv(
 ).strip()
 GOOGLE_CREDENTIALS_PATH: str = os.getenv("GOOGLE_CREDENTIALS_PATH", "").strip()
 
+# Google Sheets integration (new)
+GOOGLE_SHEETS_ID: str = os.getenv("GOOGLE_SHEETS_ID", SPREADSHEET_ID).strip()
+GOOGLE_SHEETS_CREDENTIALS: str = os.getenv("GOOGLE_SHEETS_CREDENTIALS", GOOGLE_CREDENTIALS_PATH).strip()
+
 # Support link
 SUPPORT_LINK: str = os.getenv("SUPPORT_LINK", "").strip()
 
