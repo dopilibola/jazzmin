@@ -723,6 +723,16 @@ def analytics_inline() -> InlineKeyboardMarkup:
                     callback_data="analytics:summary",
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text="👍👎 Feedback (7 kun)",
+                    callback_data="analytics:feedback7",
+                ),
+                InlineKeyboardButton(
+                    text="👍👎 Feedback (30 kun)",
+                    callback_data="analytics:feedback",
+                ),
+            ],
         ]
     )
 

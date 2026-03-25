@@ -39,6 +39,7 @@ from bot.handlers import (  # noqa: E402
 )
 from bot.handlers.payment_verification import run_verification_bot  # noqa: E402
 from bot.handlers.order_workflow import router as order_workflow_router, start_reminder_task  # noqa: E402
+from bot.handlers.admin_dashboard import router as admin_dashboard_router  # noqa: E402
 from bot_config import BOT_TOKEN, PAYMENT_BOT_TOKEN  # noqa: E402
 
 logging.basicConfig(
@@ -129,6 +130,7 @@ async def main() -> None:
     dp.include_router(support.router)
     dp.include_router(about.router)
     dp.include_router(analytics.router)
+    dp.include_router(admin_dashboard_router)
     dp.include_router(complaint.router)
     dp.include_router(order_workflow_router)
     dp.startup.register(on_startup)

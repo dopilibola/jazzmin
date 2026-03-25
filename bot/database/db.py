@@ -5,6 +5,28 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from bot.database.migrations import run_migrations
 from bot.database.models import Base
+from bot.database.analytics_models import (
+    AnalyticsEvent,
+    UserSession,
+    ButtonStats,
+    DailyStats,
+    UserActivity,
+)
+from bot.database.order_analytics_models import (
+    AnalyticsOrder,
+    OrderAcceptance,
+    WorkerStats,
+    OrderMedia,
+    DailyRevenue,
+)
+from bot.database.finance_models import (
+    ServiceCatalog,
+    CemeteryPricing,
+    ServicePricingRule,
+    OrderFinancial,
+    WorkerEarnings,
+    DailyRevenue as FinancialDailyRevenue,
+)
 from bot.database.seed import seed_locations
 from bot_config import DATABASE_URL
 
