@@ -401,6 +401,7 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
                 telegram_id=telegram_id,
                 username=callback.from_user.username,
                 deceased_full_name=data.get("deceased_full_name", ""),
+                relationship=relationship,
                 birth_year=data.get("birth_year"),
                 death_year=data.get("death_year"),
                 region=data.get("region_name", ""),

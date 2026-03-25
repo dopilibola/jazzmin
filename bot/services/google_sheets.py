@@ -202,6 +202,7 @@ GRAVES_HEADERS = [
     "telegram_id",
     "username",
     "deceased_full_name",
+    "relationship",
     "birth_year",
     "death_year",
     "region",
@@ -218,6 +219,7 @@ async def log_grave(
     telegram_id: int,
     username: Optional[str] = None,
     deceased_full_name: Optional[str] = None,
+    relationship: Optional[str] = None,
     birth_year: Optional[int] = None,
     death_year: Optional[int] = None,
     region: Optional[str] = None,
@@ -240,13 +242,14 @@ async def log_grave(
                 # Update existing grave
                 row = cell.row
                 sheet.update_cell(row, 4, deceased_full_name or "")
-                sheet.update_cell(row, 5, birth_year or "")
-                sheet.update_cell(row, 6, death_year or "")
-                sheet.update_cell(row, 7, region or "")
-                sheet.update_cell(row, 8, district or "")
-                sheet.update_cell(row, 9, cemetery or "")
-                sheet.update_cell(row, 10, row_number or "")
-                sheet.update_cell(row, 12, now)  # updated_at
+                sheet.update_cell(row, 5, relationship or "")
+                sheet.update_cell(row, 6, birth_year or "")
+                sheet.update_cell(row, 7, death_year or "")
+                sheet.update_cell(row, 8, region or "")
+                sheet.update_cell(row, 9, district or "")
+                sheet.update_cell(row, 10, cemetery or "")
+                sheet.update_cell(row, 11, row_number or "")
+                sheet.update_cell(row, 13, now)  # updated_at
                 logger.info(f"Updated grave {grave_id} in Google Sheets")
                 return True
         except gspread.exceptions.CellNotFound:
@@ -258,6 +261,7 @@ async def log_grave(
             str(telegram_id),
             username or "",
             deceased_full_name or "",
+            relationship or "",
             str(birth_year) if birth_year else "",
             str(death_year) if death_year else "",
             region or "",
