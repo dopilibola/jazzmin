@@ -10,6 +10,7 @@ from apps.botapp.helpers import (
     get_flower_by_pk,
     get_user_language as _get_lang,
 )
+from bot.database.analytics import track_event, EVENT_FLOWERS_VIEW, EVENT_FLOWER_ORDER
 from bot.database.db import async_session_factory
 from bot.database.queries import get_user_by_telegram_id
 from bot.keyboards.inline import flowers_list_inline
@@ -69,6 +70,10 @@ async def _send_flowers_content(message: Message, lang: str) -> None:
 async def show_flowers(message: Message) -> None:
     """Flowers pressed: show flower list + back button."""
     lang = await _get_lang(message.from_user.id)
+
+    # Track flowers view
+    await track_event(message.from_user.id, EVENT_FLOWERS_VIEW)
+
     await message.answer("⬇️", reply_markup=back_to_main_keyboard(lang))
     await _send_flowers_content(message, lang)
 
@@ -114,6 +119,9 @@ async def flower_order_callback(callback: CallbackQuery) -> None:
     flower_id = int(callback.data.replace("fl:order:", ""))
     telegram_id = callback.from_user.id
     lang = await _get_lang(telegram_id)
+
+    # Track flower order
+    await track_event(telegram_id, EVENT_FLOWER_ORDER, {"flower_id": flower_id})
 
     flower = await get_flower_by_pk(flower_id)
     if not flower:

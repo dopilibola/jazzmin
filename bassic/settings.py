@@ -148,3 +148,56 @@ ADMIN_IDS = os.getenv('ADMIN_IDS', TELEGRAM_ADMIN_CHAT_ID)
 # Google Sheets integration
 GOOGLE_SPREADSHEET_ID = os.getenv('GOOGLE_SPREADSHEET_ID', '')
 GOOGLE_CREDENTIALS_PATH = os.getenv('GOOGLE_CREDENTIALS_PATH', '')
+
+# Jazzmin Admin Theme Settings
+JAZZMIN_SETTINGS = {
+    "site_title": "Grave Care Admin",
+    "site_header": "Grave Care",
+    "site_brand": "Grave Care",
+    "welcome_sign": "Xush kelibsiz!",
+    "copyright": "Grave Care Services",
+
+    # Custom links in top menu
+    "topmenu_links": [
+        {"name": "Bosh sahifa", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Bot Analitika", "url": "/admin/analytics/", "permissions": ["auth.view_user"]},
+        {"name": "Buyurtmalar", "url": "/admin/order-analytics/", "permissions": ["auth.view_user"]},
+    ],
+
+    # Custom icons
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "botapp.TelegramUser": "fas fa-robot",
+        "botapp.CatalogService": "fas fa-broom",
+        "botapp.CatalogFlowerCategory": "fas fa-folder",
+        "botapp.CatalogFlowerProduct": "fas fa-seedling",
+        "catalog.Service": "fas fa-broom",
+        "catalog.Flower": "fas fa-seedling",
+        "catalog.Region": "fas fa-map",
+        "catalog.District": "fas fa-map-marker",
+        "catalog.Cemetery": "fas fa-church",
+        "orders.Order": "fas fa-shopping-cart",
+    },
+
+    # Custom links to appear in the side menu
+    "custom_links": {
+        "botapp": [
+            {
+                "name": "Bot Analitika",
+                "url": "/admin/analytics/",
+                "icon": "fas fa-chart-line",
+                "permissions": ["auth.view_user"]
+            },
+            {
+                "name": "Buyurtmalar Analitika",
+                "url": "/admin/order-analytics/",
+                "icon": "fas fa-shopping-cart",
+                "permissions": ["auth.view_user"]
+            },
+        ],
+    },
+
+    "show_ui_builder": False,
+}

@@ -9,6 +9,13 @@ from aiogram.types import CallbackQuery, Message, PhotoSize
 
 logger = logging.getLogger(__name__)
 
+from bot.database.analytics import (
+    track_event,
+    EVENT_CHECKOUT_START,
+    EVENT_PAYMENT_METHOD,
+    EVENT_PAYMENT_RECEIPT,
+    EVENT_PAYMENT_CONFIRMED,
+)
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     get_order_by_id,
@@ -43,6 +50,9 @@ router = Router(name="payment")
 
 async def show_payment_options(callback: CallbackQuery, order_id: int, lang: str) -> None:
     """Show grave selection first, then payment method. Called after order creation."""
+    # Track checkout start
+    await track_event(callback.from_user.id, EVENT_CHECKOUT_START, {"order_id": order_id})
+
     async with async_session_factory() as session:
         order = await get_order_by_id(session, order_id)
         if not order:
@@ -160,6 +170,9 @@ async def payment_method_callback(callback: CallbackQuery, state: FSMContext) ->
     method = parts[3]  # "internal" or "visa"
     lang = await _get_lang(callback.from_user.id)
 
+    # Track payment method selection
+    await track_event(callback.from_user.id, EVENT_PAYMENT_METHOD, {"method": method, "order_id": order_id})
+
     data = await state.get_data()
     grave_id = data.get("selected_grave_id")
 
@@ -238,6 +251,9 @@ async def payment_receipt_upload(message: Message, state: FSMContext) -> None:
 
         await update_order_receipt(session, order_id, file_id, method)
         await session.commit()
+
+    # Track receipt upload
+    await track_event(message.from_user.id, EVENT_PAYMENT_RECEIPT, {"order_id": order_id})
 
     await state.clear()
 
@@ -323,6 +339,11 @@ async def payment_confirm_callback(callback: CallbackQuery) -> None:
             return
         await update_order_status(session, order_id, ORDER_STATUS_PAID)
         await session.commit()
+
+        # Track payment confirmed for the user who placed the order
+        if order.user:
+            await track_event(order.user.telegram_id, EVENT_PAYMENT_CONFIRMED, {"order_id": order_id})
+
     # Send to channel
     if PAYMENT_CHANNEL_ID:
         try:

@@ -1,16 +1,34 @@
 """
 Support: show direct link to support personal chat.
+Reads lichka from .env dynamically so changes take effect without restart.
 """
+import os
 from aiogram import F, Router
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from apps.botapp.helpers import get_user_language as _get_lang
+from bot.database.analytics import track_event, EVENT_SUPPORT
 from bot.keyboards.reply import back_to_main_keyboard
 from bot.utils.texts import get_text
 
-from bot_config import SUPPORT_LINK
-
 router = Router(name="support")
+
+
+def _get_support_url() -> str:
+    """
+    Get support URL from .env (lichka or SUPPORT_LINK).
+    Reads from .env each time so changes work without restart.
+    """
+    # Read lichka from .env dynamically
+    lichka = os.getenv("lichka", "").strip()
+    if lichka:
+        # Remove @ if present and create t.me link
+        username = lichka.lstrip("@")
+        return f"https://t.me/{username}"
+
+    # Fallback to SUPPORT_LINK
+    support_link = os.getenv("SUPPORT_LINK", "").strip()
+    return support_link
 
 
 @router.message(
@@ -25,10 +43,16 @@ router = Router(name="support")
 async def show_support_link(message: Message) -> None:
     """Show support personal chat link."""
     lang = await _get_lang(message.from_user.id)
-    if SUPPORT_LINK:
+
+    # Track support view
+    await track_event(message.from_user.id, EVENT_SUPPORT)
+
+    support_url = _get_support_url()
+
+    if support_url:
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=get_text(lang, "btn_support"), url=SUPPORT_LINK)],
+                [InlineKeyboardButton(text=get_text(lang, "btn_support"), url=support_url)],
             ]
         )
         await message.answer(

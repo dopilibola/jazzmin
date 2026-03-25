@@ -10,6 +10,7 @@ from apps.botapp.helpers import (
     get_service_by_pk,
     get_user_language as _get_lang,
 )
+from bot.database.analytics import track_event, EVENT_SERVICES_VIEW, EVENT_SERVICE_ORDER
 from bot.database.db import async_session_factory
 from bot.database.queries import get_user_by_telegram_id
 from bot.keyboards.inline import services_list_inline
@@ -58,6 +59,10 @@ async def _send_services_content(message: Message, lang: str) -> None:
 async def show_services(message: Message) -> None:
     """Services pressed: show service list + back button."""
     lang = await _get_lang(message.from_user.id)
+
+    # Track services view
+    await track_event(message.from_user.id, EVENT_SERVICES_VIEW)
+
     await message.answer("⬇️", reply_markup=back_to_main_keyboard(lang))
     await _send_services_content(message, lang)
 
@@ -103,6 +108,9 @@ async def service_order_callback(callback: CallbackQuery) -> None:
     service_id = int(callback.data.replace("svc:order:", ""))
     telegram_id = callback.from_user.id
     lang = await _get_lang(telegram_id)
+
+    # Track service order
+    await track_event(telegram_id, EVENT_SERVICE_ORDER, {"service_id": service_id})
 
     service = await get_service_by_pk(service_id)
     if not service:

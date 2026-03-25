@@ -10,6 +10,17 @@ from aiogram.types import CallbackQuery, Message
 
 logger = logging.getLogger(__name__)
 
+from bot.database.analytics import (
+    track_event,
+    EVENT_GRAVE_REGION,
+    EVENT_GRAVE_DISTRICT,
+    EVENT_GRAVE_CEMETERY,
+    EVENT_GRAVE_DECEASED,
+    EVENT_GRAVE_BIRTH,
+    EVENT_GRAVE_DEATH,
+    EVENT_GRAVE_RELATIONSHIP,
+    EVENT_GRAVE_COMPLETE,
+)
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     add_grave,
@@ -42,7 +53,7 @@ router = Router(name="graves")
 async def _safe_callback_answer(callback: CallbackQuery) -> None:
     """Safely answer callback query, ignore if expired."""
     try:
-        await _safe_callback_answer(callback)
+        await callback.answer()
     except TelegramBadRequest as e:
         if "query is too old" in str(e):
             logger.warning("Callback query expired: %s", callback.data)
@@ -102,6 +113,9 @@ async def cb_grave_region(callback: CallbackQuery, state: FSMContext) -> None:
     await _safe_callback_answer(callback)
     region_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
+
+    # Track region selection
+    await track_event(callback.from_user.id, EVENT_GRAVE_REGION)
     async with async_session_factory() as session:
         region = await get_region_by_id(session, region_id)
         districts = await get_districts_by_region(session, region_id)
@@ -123,6 +137,9 @@ async def cb_grave_district(callback: CallbackQuery, state: FSMContext) -> None:
     await _safe_callback_answer(callback)
     district_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
+
+    # Track district selection
+    await track_event(callback.from_user.id, EVENT_GRAVE_DISTRICT)
     async with async_session_factory() as session:
         district = await get_district_by_id(session, district_id)
         cemeteries = await get_cemeteries_by_district(session, district_id)
@@ -146,6 +163,9 @@ async def cb_grave_cemetery(callback: CallbackQuery, state: FSMContext) -> None:
     await _safe_callback_answer(callback)
     cemetery_id = int(callback.data.split(":")[-1])
     lang = (await state.get_data()).get("lang", "ru")
+
+    # Track cemetery selection
+    await track_event(callback.from_user.id, EVENT_GRAVE_CEMETERY)
     async with async_session_factory() as session:
         cemetery = await get_cemetery_by_id(session, cemetery_id)
     if not cemetery:
@@ -217,6 +237,10 @@ async def process_deceased(message: Message, state: FSMContext) -> None:
         lang = (await state.get_data()).get("lang", "ru")
         await message.answer(get_text(lang, "invalid_name"))
         return
+
+    # Track deceased name entry
+    await track_event(message.from_user.id, EVENT_GRAVE_DECEASED)
+
     await state.update_data(deceased_full_name=name)
     await state.set_state(GraveState.birth_choice)
     lang = (await state.get_data()).get("lang", "ru")
@@ -246,6 +270,10 @@ async def process_birth_year(message: Message, state: FSMContext) -> None:
     if not is_valid_year(text):
         await message.answer(get_text(lang, "order_invalid_year"))
         return
+
+    # Track birth year entry
+    await track_event(message.from_user.id, EVENT_GRAVE_BIRTH)
+
     await state.update_data(birth_year=int(text))
     data = await state.get_data()
     if data.get("birth_approximate"):
@@ -295,6 +323,10 @@ async def process_death_year(message: Message, state: FSMContext) -> None:
     if not is_valid_year(text):
         await message.answer(get_text(lang, "order_invalid_year"))
         return
+
+    # Track death year entry
+    await track_event(message.from_user.id, EVENT_GRAVE_DEATH)
+
     await state.update_data(death_year=int(text))
     data = await state.get_data()
     if data.get("death_approximate"):
@@ -331,6 +363,9 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
     rel_part = callback.data.split(":")[-1]
     from bot.database.models import RELATIONSHIP_DEFAULT
 
+    # Track relationship selection
+    await track_event(callback.from_user.id, EVENT_GRAVE_RELATIONSHIP)
+
     relationship = RELATIONSHIP_DEFAULT if rel_part == "skip" else rel_part
     data = await state.get_data()
     lang = data.get("lang", "ru")
@@ -357,6 +392,10 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
             relationship_status=relationship,
         )
         await session.commit()
+
+    # Track grave complete
+    await track_event(telegram_id, EVENT_GRAVE_COMPLETE)
+
     await state.clear()
     await callback.message.answer(
         get_text(lang, "grave_added"),

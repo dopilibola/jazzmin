@@ -1,0 +1,715 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #059669;
+        --primary-dark: #047857;
+        --primary-light: #34d399;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #8b5cf6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    .oa-wrapper { background: var(--gray-50); min-height: 100vh; padding: 0; margin: -20px; }
+    .oa-container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+
+    /* Navigation */
+    .oa-nav {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .oa-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 24px;
+        background: white;
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--gray-600);
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: var(--shadow);
+    }
+
+    .oa-nav-btn:hover { color: var(--primary); }
+    .oa-nav-btn.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+    }
+
+    /* Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--warning) 0%, #fbbf24 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .page-header h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 800; }
+    .page-header p { margin: 0; opacity: 0.9; }
+
+    /* Period Selector */
+    .period-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .period-card h3 {
+        margin: 0 0 20px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .period-form {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 12px 16px;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 14px;
+        min-width: 140px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-success:hover { background: #059669; }
+
+    /* Period Buttons */
+    .period-btns {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .period-btn {
+        padding: 10px 20px;
+        border: 2px solid var(--gray-200);
+        background: white;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: var(--gray-600);
+    }
+
+    .period-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .period-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Summary Stats */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    @media (max-width: 1000px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .summary-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .summary-card .icon { font-size: 32px; margin-bottom: 12px; }
+    .summary-card .value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+    .summary-card .value.green { color: var(--primary); }
+    .summary-card .value.red { color: var(--danger); }
+    .summary-card .label { font-size: 14px; color: var(--gray-500); }
+
+    /* Workers Table */
+    .table-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .table-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .salary-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .salary-table th {
+        text-align: left;
+        padding: 14px 20px;
+        background: var(--gray-50);
+        color: var(--gray-500);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .salary-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--gray-100);
+        font-size: 14px;
+    }
+
+    .salary-table tbody tr:hover { background: var(--gray-50); }
+
+    .worker-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .worker-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--warning), #fbbf24);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .worker-info .name { font-weight: 600; color: var(--gray-800); }
+    .worker-info .username { font-size: 12px; color: var(--gray-400); }
+
+    .money { font-weight: 700; }
+    .money.earnings { color: var(--gray-800); }
+    .money.commission { color: var(--danger); }
+    .money.net { color: var(--primary); font-size: 16px; }
+
+    /* Totals Row */
+    .salary-table tfoot td {
+        background: var(--gray-50);
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .salary-table tfoot .money.net {
+        font-size: 18px;
+    }
+
+    /* No Data */
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--gray-400);
+    }
+
+    /* Export Section */
+    .export-section {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    /* Service Fees */
+    .service-fees-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .service-fees-card h3 {
+        margin: 0 0 20px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--purple);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .service-fees-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .service-fee-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--gray-50);
+        border-radius: 12px;
+        border: 2px solid var(--gray-200);
+    }
+
+    .service-fee-item.active {
+        border-color: var(--purple);
+        background: #f3e8ff;
+    }
+
+    .service-fee-item .name {
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .service-fee-item .amount {
+        font-weight: 700;
+        color: var(--purple);
+    }
+
+    .service-fee-item .actions {
+        display: flex;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .service-fee-item button {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .service-fee-item .toggle-btn {
+        background: var(--gray-200);
+        color: var(--gray-600);
+    }
+
+    .service-fee-item.active .toggle-btn {
+        background: var(--purple);
+        color: white;
+    }
+
+    .service-fee-item .delete-btn {
+        background: var(--danger);
+        color: white;
+    }
+
+    .add-service-form {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        padding-top: 16px;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .add-service-form .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .add-service-form label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+
+    .add-service-form input {
+        padding: 10px 14px;
+        border: 2px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .add-service-form input:focus {
+        outline: none;
+        border-color: var(--purple);
+    }
+
+    .add-service-form .btn-add {
+        padding: 10px 20px;
+        background: var(--purple);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .add-service-form .btn-add:hover {
+        background: #7c3aed;
+    }
+
+    .service-total {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--purple), #a78bfa);
+        border-radius: 12px;
+        color: white;
+        margin-top: 16px;
+    }
+
+    .service-total .label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .service-total .value {
+        font-size: 20px;
+        font-weight: 800;
+        margin-left: auto;
+    }
+
+    /* Updated money colors */
+    .money.service-fee { color: var(--purple); }
+
+    /* Messages */
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .message {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .message.success {
+        background: #d1fae5;
+        color: var(--success);
+    }
+
+    .message.error {
+        background: #fee2e2;
+        color: var(--danger);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oa-wrapper">
+<div class="oa-container">
+    <!-- Navigation -->
+    <div class="oa-nav">
+        <a href="{% url 'order_analytics_dashboard' %}" class="oa-nav-btn">
+            <span>📊</span> Dashboard
+        </a>
+        <a href="{% url 'order_analytics_orders' %}" class="oa-nav-btn">
+            <span>📦</span> Buyurtmalar
+        </a>
+        <a href="{% url 'order_analytics_workers' %}" class="oa-nav-btn">
+            <span>👷</span> Ishchilar
+        </a>
+        <a href="{% url 'order_analytics_salary' %}" class="oa-nav-btn active">
+            <span>💰</span> Hisobot
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1>💰 Haftalik / Oylik Hisobot</h1>
+        <p>Davr: {{ date_from_display }} - {{ date_to_display }} | Komissiya: {{ commission_percent }}%</p>
+    </div>
+
+    <!-- Period Selector -->
+    <div class="period-card">
+        <h3>📅 Davrni tanlang</h3>
+
+        <div class="period-btns">
+            <a href="?period_type=week{% if commission_percent %}&commission={{ commission_percent }}{% endif %}"
+               class="period-btn {% if period_type == 'week' %}active{% endif %}">
+                Haftalik
+            </a>
+            <a href="?period_type=month{% if commission_percent %}&commission={{ commission_percent }}{% endif %}"
+               class="period-btn {% if period_type == 'month' %}active{% endif %}">
+                Oylik
+            </a>
+        </div>
+
+        <form method="get" class="period-form">
+            <input type="hidden" name="period_type" value="{{ period_type }}">
+
+            <div class="form-group">
+                <label>Boshlanish sanasi</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+
+            <div class="form-group">
+                <label>Tugash sanasi</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+
+            <div class="form-group">
+                <label>Komissiya %</label>
+                <input type="number" name="commission" value="{{ commission_percent }}" min="0" max="100" step="0.5" style="width: 100px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                🔄 Hisoblash
+            </button>
+        </form>
+    </div>
+
+    <!-- Service Fees -->
+    <div class="service-fees-card">
+        <h3>🎯 Hizmat To'lovlari (har bir buyurtma uchun)</h3>
+
+        {% if service_fees %}
+        <div class="service-fees-list">
+            {% for sf in service_fees %}
+            <div class="service-fee-item {% if sf.is_active %}active{% endif %}">
+                <span class="name">{{ sf.service_name }}</span>
+                <span class="amount">{{ sf.fee_amount|floatformat:0 }} so'm</span>
+                <div class="actions">
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_service_fee">
+                        <input type="hidden" name="fee_id" value="{{ sf.id }}">
+                        <button type="submit" class="toggle-btn" title="{% if sf.is_active %}O'chirish{% else %}Yoqish{% endif %}">
+                            {% if sf.is_active %}✓{% else %}○{% endif %}
+                        </button>
+                    </form>
+                    <form method="post" style="display: inline;" onsubmit="return confirm('O\'chirilsinmi?')">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_service_fee">
+                        <input type="hidden" name="fee_id" value="{{ sf.id }}">
+                        <button type="submit" class="delete-btn">✕</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: var(--gray-400); margin-bottom: 16px;">Hozircha hizmat to'lovlari yo'q</p>
+        {% endif %}
+
+        <form method="post" class="add-service-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_service_fee">
+            <div class="form-group">
+                <label>Hizmat nomi</label>
+                <input type="text" name="service_name" placeholder="Masalan: Tozalash" required style="min-width: 200px;">
+            </div>
+            <div class="form-group">
+                <label>Summa (so'm)</label>
+                <input type="number" name="fee_amount" placeholder="50000" min="0" required style="width: 120px;">
+            </div>
+            <button type="submit" class="btn-add">+ Qo'shish</button>
+        </form>
+
+        {% if active_service_fees %}
+        <div class="service-total">
+            <span class="label">Jami hizmat to'lovi (har bir buyurtma uchun):</span>
+            <span class="value">{{ total_service_fee_per_order|floatformat:0 }} so'm</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="icon">📦</div>
+            <div class="value">{{ summary.total_orders }}</div>
+            <div class="label">Jami buyurtmalar</div>
+        </div>
+        <div class="summary-card">
+            <div class="icon">💵</div>
+            <div class="value">{{ total_earnings|floatformat:0 }}</div>
+            <div class="label">Buyurtmalar summasi</div>
+        </div>
+        <div class="summary-card">
+            <div class="icon">📊</div>
+            <div class="value red">-{{ total_commission|floatformat:0 }}</div>
+            <div class="label">Komissiya ({{ commission_percent }}%)</div>
+        </div>
+        <div class="summary-card">
+            <div class="icon">🎯</div>
+            <div class="value" style="color: var(--purple);">+{{ total_service_fees|floatformat:0 }}</div>
+            <div class="label">Hizmat to'lovlari</div>
+        </div>
+    </div>
+
+    <!-- Final Total -->
+    <div class="summary-grid" style="grid-template-columns: 1fr;">
+        <div class="summary-card" style="background: linear-gradient(135deg, var(--primary), var(--primary-light));">
+            <div class="icon" style="color: white;">✅</div>
+            <div class="value" style="color: white; font-size: 36px;">{{ total_net|floatformat:0 }} so'm</div>
+            <div class="label" style="color: rgba(255,255,255,0.9);">JAMI TO'LOV SUMMASI (Buyurtma - Komissiya + Hizmatlar)</div>
+        </div>
+    </div>
+
+    <!-- Workers Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <h3>👷 Ishchilar hisoboti</h3>
+            <div class="export-section">
+                {% if workers %}
+                <a href="{% url 'order_analytics_salary_export' %}?date_from={{ date_from }}&date_to={{ date_to }}&commission={{ commission_percent }}"
+                   class="btn btn-success">
+                    📥 Excel yuklab olish
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if workers %}
+        <table class="salary-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Ishchi</th>
+                    <th>Telegram ID</th>
+                    <th>Buyurtmalar</th>
+                    <th>Buyurtma summasi</th>
+                    <th>Komissiya ({{ commission_percent }}%)</th>
+                    <th>Hizmat to'lovi</th>
+                    <th>To'lov summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in workers %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--gray-400);">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="worker-cell">
+                            <div class="worker-avatar">
+                                {{ w.display_name|default:"W"|slice:":1"|upper }}
+                            </div>
+                            <div class="worker-info">
+                                <div class="name">{{ w.display_name|default:"Noma'lum" }}</div>
+                                <div class="username">@{{ w.username|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ w.telegram_id }}</td>
+                    <td><strong>{{ w.order_count }}</strong></td>
+                    <td><span class="money earnings">{{ w.total_earnings|floatformat:0 }}</span></td>
+                    <td><span class="money commission">-{{ w.commission_amount|floatformat:0 }}</span></td>
+                    <td><span class="money service-fee">+{{ w.service_fee_total|floatformat:0 }}</span></td>
+                    <td><span class="money net">{{ w.net_payment|floatformat:0 }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3"><strong>JAMI</strong></td>
+                    <td><strong>{{ summary.total_orders }}</strong></td>
+                    <td><span class="money earnings">{{ total_earnings|floatformat:0 }}</span></td>
+                    <td><span class="money commission">-{{ total_commission|floatformat:0 }}</span></td>
+                    <td><span class="money service-fee">+{{ total_service_fees|floatformat:0 }}</span></td>
+                    <td><span class="money net">{{ total_net|floatformat:0 }}</span></td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <div class="no-data">
+            <div style="font-size: 48px; margin-bottom: 12px;">📊</div>
+            <p>Bu davrda bajarilgan buyurtmalar yo'q</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+{% endblock %}

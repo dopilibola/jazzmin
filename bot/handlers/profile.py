@@ -5,6 +5,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from bot.database.analytics import track_event, EVENT_PROFILE_VIEW
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     create_or_update_user,
@@ -99,6 +100,10 @@ def _format_profile_view(user, graves: list, orders: list, lang: str) -> str:
 async def show_profile_menu(message: Message, state: FSMContext) -> None:
     """Show profile view or prompt to complete profile."""
     telegram_id = message.from_user.id
+
+    # Track profile view
+    await track_event(telegram_id, EVENT_PROFILE_VIEW)
+
     async with async_session_factory() as session:
         user = await get_user_by_telegram_id(session, telegram_id)
     lang = await _get_lang(telegram_id)

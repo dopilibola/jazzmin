@@ -1,0 +1,414 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #059669;
+        --primary-dark: #047857;
+        --primary-light: #34d399;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #8b5cf6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    .oa-wrapper {
+        background: var(--gray-50);
+        min-height: 100vh;
+        padding: 0;
+        margin: -20px;
+    }
+
+    .oa-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Navigation */
+    .oa-nav {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .oa-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 24px;
+        background: white;
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--gray-600);
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: var(--shadow);
+        transition: all 0.2s;
+    }
+
+    .oa-nav-btn:hover { color: var(--primary); }
+    .oa-nav-btn.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+    }
+
+    /* Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--info) 0%, #60a5fa 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .page-header h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 800; }
+    .page-header p { margin: 0; opacity: 0.9; }
+
+    /* Filters */
+    .filters-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .filters-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px 14px;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 14px;
+        min-width: 160px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .filter-btn {
+        padding: 12px 24px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .filter-btn:hover { background: var(--primary-dark); }
+
+    .clear-btn {
+        padding: 12px 24px;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: none;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    /* Orders Card */
+    .orders-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .orders-table th {
+        text-align: left;
+        padding: 14px 16px;
+        background: var(--gray-50);
+        color: var(--gray-500);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .orders-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--gray-100);
+        font-size: 14px;
+    }
+
+    .orders-table tbody tr {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .orders-table tbody tr:hover { background: var(--gray-50); }
+
+    /* Order ID */
+    .order-id {
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    /* Status */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-badge.new { background: #dbeafe; color: var(--info); }
+    .status-badge.posted { background: #fef3c7; color: #b45309; }
+    .status-badge.in_progress { background: #fed7aa; color: #c2410c; }
+    .status-badge.completed { background: #d1fae5; color: var(--success); }
+    .status-badge.cancelled { background: #fee2e2; color: var(--danger); }
+
+    /* Price */
+    .price { font-weight: 700; color: var(--gray-800); }
+
+    /* Time */
+    .time-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .time-badge.fast { background: #d1fae5; color: var(--success); }
+    .time-badge.medium { background: #fef3c7; color: #b45309; }
+    .time-badge.slow { background: #fee2e2; color: var(--danger); }
+
+    /* Feedback */
+    .feedback-good { color: var(--success); }
+    .feedback-bad { color: var(--danger); }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 24px;
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-100);
+    }
+
+    .page-link {
+        padding: 10px 16px;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        color: var(--gray-600);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .page-link:hover { border-color: var(--primary); color: var(--primary); }
+    .page-link.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .page-link.disabled { opacity: 0.5; pointer-events: none; }
+
+    /* No data */
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--gray-400);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oa-wrapper">
+<div class="oa-container">
+    <!-- Navigation -->
+    <div class="oa-nav">
+        <a href="{% url 'order_analytics_dashboard' %}" class="oa-nav-btn">
+            <span>📊</span> Dashboard
+        </a>
+        <a href="{% url 'order_analytics_orders' %}" class="oa-nav-btn active">
+            <span>📦</span> Buyurtmalar
+        </a>
+        <a href="{% url 'order_analytics_workers' %}" class="oa-nav-btn">
+            <span>👷</span> Ishchilar
+        </a>
+        <a href="{% url 'order_analytics_salary' %}" class="oa-nav-btn">
+            <span>💰</span> Hisobot
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1>📦 Buyurtmalar Ro'yxati</h1>
+        <p>Jami: {{ total_count }} ta buyurtma</p>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="filters-card">
+        <div class="filters-row">
+            <div class="filter-group">
+                <label>Qidirish</label>
+                <input type="text" name="search" placeholder="Ism, qabriston..." value="{{ search }}">
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status">
+                    <option value="">Barchasi</option>
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Sana (dan)</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="filter-group">
+                <label>Sana (gacha)</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <button type="submit" class="filter-btn">🔍 Qidirish</button>
+            <a href="{% url 'order_analytics_orders' %}" class="clear-btn">Tozalash</a>
+        </div>
+    </form>
+
+    <!-- Orders Table -->
+    <div class="orders-card">
+        {% if orders %}
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Mijoz</th>
+                    <th>Qabriston</th>
+                    <th>Marhumning ismi</th>
+                    <th>Narx</th>
+                    <th>Status</th>
+                    <th>Qabul vaqti</th>
+                    <th>Ishchi</th>
+                    <th>Sana</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr onclick="window.location='{% url 'order_analytics_order_detail' order.id %}'">
+                    <td><span class="order-id">#{{ order.original_id }}</span></td>
+                    <td>
+                        {{ order.customer_name|default:"—"|truncatechars:20 }}
+                        {% if order.customer_phone %}
+                        <br><small style="color: var(--gray-400);">{{ order.customer_phone }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.cemetery_name|default:"—"|truncatechars:20 }}</td>
+                    <td>{{ order.deceased_full_name|default:"—"|truncatechars:25 }}</td>
+                    <td class="price">{{ order.total_price|floatformat:0 }}</td>
+                    <td><span class="status-badge {{ order.status }}">{{ order.status }}</span></td>
+                    <td>
+                        {% if order.time_to_accept and order.time_to_accept != '—' %}
+                        <span class="time-badge {% if order.time_to_accept_seconds < 120 %}fast{% elif order.time_to_accept_seconds < 600 %}medium{% else %}slow{% endif %}">
+                            {{ order.time_to_accept }}
+                        </span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.worker_username %}
+                        @{{ order.worker_username }}
+                        {% if order.customer_feedback %}
+                        <br>
+                        {% if order.customer_feedback == 'good' %}
+                        <span class="feedback-good">👍</span>
+                        {% else %}
+                        <span class="feedback-bad">👎</span>
+                        {% endif %}
+                        {% endif %}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if has_prev %}
+            <a href="?page={{ page|add:'-1' }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">← Oldingi</a>
+            {% else %}
+            <span class="page-link disabled">← Oldingi</span>
+            {% endif %}
+
+            {% for p in page_range %}
+            <a href="?page={{ p }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+               class="page-link {% if p == page %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+
+            {% if has_next %}
+            <a href="?page={{ page|add:'1' }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">Keyingi →</a>
+            {% else %}
+            <span class="page-link disabled">Keyingi →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="no-data">
+            <div style="font-size: 48px; margin-bottom: 12px;">📦</div>
+            <p>{% if search or status or date_from %}Qidiruv bo'yicha buyurtma topilmadi{% else %}Hozircha buyurtmalar yo'q{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+{% endblock %}

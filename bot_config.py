@@ -85,6 +85,9 @@ GOOGLE_CREDENTIALS_PATH: str = os.getenv("GOOGLE_CREDENTIALS_PATH", "").strip()
 # Support link
 SUPPORT_LINK: str = os.getenv("SUPPORT_LINK", "").strip()
 
+# Personal chat username for support (lichka)
+LICHKA: str = os.getenv("lichka", "").strip()
+
 # Payment card numbers
 PAYMENT_CARD_NUMBER: str = os.getenv("PAYMENT_CARD_NUMBER", "").strip()
 PAYMENT_CARD_INTERNAL: str = os.getenv("PAYMENT_CARD_INTERNAL", "").strip()

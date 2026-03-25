@@ -9,6 +9,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from apps.botapp.helpers import get_user_language, save_user_language, save_user_profile, user_exists
+from bot.database.analytics import (
+    track_event,
+    EVENT_START,
+    EVENT_LANGUAGE_SELECT,
+    EVENT_REGISTRATION_NAME,
+    EVENT_REGISTRATION_COMPLETE,
+)
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     create_or_update_user,
@@ -49,6 +56,9 @@ async def cmd_start(
     if state:
         await state.clear()
     telegram_id = message.from_user.id
+
+    # Track /start event
+    await track_event(telegram_id, EVENT_START)
 
     exists = await user_exists(telegram_id)
 
@@ -118,6 +128,9 @@ async def process_registration_name(message: Message, state: FSMContext) -> None
     username = message.from_user.username or ""
     lang = await _get_lang(telegram_id)
 
+    # Track name entry
+    await track_event(telegram_id, EVENT_REGISTRATION_NAME)
+
     # Save to bot SQLAlchemy DB
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, full_name=full_name)
@@ -125,6 +138,9 @@ async def process_registration_name(message: Message, state: FSMContext) -> None
 
     from bot.middlewares.registration import invalidate_reg_cache
     invalidate_reg_cache(telegram_id)
+
+    # Track registration complete
+    await track_event(telegram_id, EVENT_REGISTRATION_COMPLETE)
 
     # Save to Django DB
     await save_user_profile(
@@ -239,6 +255,9 @@ async def callback_language(callback: CallbackQuery, state: FSMContext) -> None:
     telegram_id = callback.from_user.id
 
     await save_user_language(telegram_id, lang)
+
+    # Track language selection
+    await track_event(telegram_id, EVENT_LANGUAGE_SELECT, {"language": lang})
 
     async with async_session_factory() as session:
         await create_or_update_user(session, telegram_id, language=lang)

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.catalog.models import Service, Flower
+from apps.catalog.models import Service  # , Flower  # COMMENTED OUT
 
 
 class Order(models.Model):
@@ -16,10 +16,10 @@ class Order(models.Model):
     service = models.ForeignKey(
         Service, on_delete=models.PROTECT, related_name='orders',
     )
-    flower = models.ForeignKey(
-        Flower, on_delete=models.PROTECT, related_name='orders',
-        blank=True, null=True,
-    )
+    # flower = models.ForeignKey(  # COMMENTED OUT
+    #     Flower, on_delete=models.PROTECT, related_name='orders',
+    #     blank=True, null=True,
+    # )
     cemetery_name = models.CharField(max_length=255)
     grave_owner_name = models.CharField(max_length=255)
     order_notes = models.TextField(blank=True)

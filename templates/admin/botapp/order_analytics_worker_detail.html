@@ -1,0 +1,359 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #059669;
+        --primary-light: #34d399;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #8b5cf6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    .oa-wrapper { background: var(--gray-50); min-height: 100vh; padding: 0; margin: -20px; }
+    .oa-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: white;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--gray-600);
+        font-weight: 500;
+        box-shadow: var(--shadow);
+        margin-bottom: 20px;
+    }
+
+    .back-btn:hover { color: var(--primary); }
+
+    .worker-header {
+        background: linear-gradient(135deg, var(--purple) 0%, #a78bfa 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .worker-avatar-lg {
+        width: 100px;
+        height: 100px;
+        border-radius: 24px;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 42px;
+        font-weight: 700;
+    }
+
+    .worker-header-info h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 800; }
+    .worker-header-info .meta { opacity: 0.9; display: flex; gap: 16px; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    @media (max-width: 1000px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .stat-card .icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+
+    .stat-card .value {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .stat-card .value.primary { color: var(--primary); }
+    .stat-card .value.success { color: var(--success); }
+    .stat-card .value.warning { color: var(--warning); }
+
+    .stat-card .label {
+        font-size: 14px;
+        color: var(--gray-500);
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+        margin: 0 0 20px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info-label { color: var(--gray-500); font-size: 14px; }
+    .info-value { font-weight: 600; color: var(--gray-800); }
+    .info-value.success { color: var(--success); }
+    .info-value.danger { color: var(--danger); }
+
+    .rating-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .rating-stars { font-size: 28px; }
+    .rating-number { font-size: 48px; font-weight: 800; color: var(--gray-800); }
+
+    .feedback-bar {
+        display: flex;
+        gap: 4px;
+        margin-top: 16px;
+    }
+
+    .feedback-bar .good {
+        background: var(--success);
+        height: 8px;
+        border-radius: 4px;
+    }
+
+    .feedback-bar .bad {
+        background: var(--danger);
+        height: 8px;
+        border-radius: 4px;
+    }
+
+    .recent-orders {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .order-item:last-child { border-bottom: none; }
+
+    .order-id {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .order-date {
+        font-size: 12px;
+        color: var(--gray-400);
+    }
+
+    .order-status {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .order-status.completed { background: #d1fae5; color: var(--success); }
+    .order-status.in_progress { background: #fed7aa; color: #c2410c; }
+
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: var(--gray-400);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oa-wrapper">
+<div class="oa-container">
+    <a href="{% url 'order_analytics_workers' %}" class="back-btn">← Ishchilar ro'yxatiga</a>
+
+    {% if worker %}
+    <!-- Header -->
+    <div class="worker-header">
+        <div class="worker-avatar-lg">
+            {{ worker.display_name|default:"W"|slice:":1"|upper }}
+        </div>
+        <div class="worker-header-info">
+            <h1>{{ worker.display_name|default:"Noma'lum ishchi" }}</h1>
+            <div class="meta">
+                <span>@{{ worker.username|default:"—" }}</span>
+                <span>ID: {{ worker.telegram_id }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="icon">📦</div>
+            <div class="value">{{ worker.total_accepted }}</div>
+            <div class="label">Qabul qilingan</div>
+        </div>
+        <div class="stat-card">
+            <div class="icon">✅</div>
+            <div class="value success">{{ worker.total_completed }}</div>
+            <div class="label">Bajarilgan</div>
+        </div>
+        <div class="stat-card">
+            <div class="icon">❌</div>
+            <div class="value" style="color: var(--danger);">{{ worker.total_rejected }}</div>
+            <div class="label">Rad etilgan</div>
+        </div>
+        <div class="stat-card">
+            <div class="icon">💰</div>
+            <div class="value primary">{{ worker.total_earnings|floatformat:0 }}</div>
+            <div class="label">Jami daromad</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- Performance -->
+        <div class="card">
+            <h3>⏱️ Ishlash tezligi</h3>
+            <div class="info-row">
+                <span class="info-label">O'rtacha qabul vaqti</span>
+                <span class="info-value">{{ worker.avg_accept_time }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Eng tez qabul</span>
+                <span class="info-value success">{{ worker.fastest_accept }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Birinchi buyurtma</span>
+                <span class="info-value">{{ worker.first_order_at|date:"d.m.Y"|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Oxirgi buyurtma</span>
+                <span class="info-value">{{ worker.last_order_at|date:"d.m.Y"|default:"—" }}</span>
+            </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="card">
+            <h3>⭐ Reyting va baholash</h3>
+            <div class="rating-display">
+                <span class="rating-stars">⭐</span>
+                <span class="rating-number">{{ worker.rating }}</span>
+                <span style="color: var(--gray-400);">/ 5.0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">👍 Ijobiy</span>
+                <span class="info-value success">{{ worker.positive_feedback }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">👎 Salbiy</span>
+                <span class="info-value danger">{{ worker.negative_feedback }}</span>
+            </div>
+            {% with total_fb=worker.positive_feedback|add:worker.negative_feedback %}
+            {% if total_fb > 0 %}
+            <div class="feedback-bar">
+                <div class="good" style="flex: {{ worker.positive_feedback }};"></div>
+                <div class="bad" style="flex: {{ worker.negative_feedback }};"></div>
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card">
+        <h3>📋 Oxirgi buyurtmalar</h3>
+        {% if worker.recent_orders %}
+        <div class="recent-orders">
+            {% for order in worker.recent_orders %}
+            <div class="order-item">
+                <div>
+                    <span class="order-id">#{{ order.order_id }}</span>
+                    <span class="order-date">{{ order.accepted_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div>
+                    {% if order.feedback == 'good' %}👍{% elif order.feedback == 'bad' %}👎{% endif %}
+                    <span class="order-status {% if order.is_completed %}completed{% else %}in_progress{% endif %}">
+                        {% if order.is_completed %}Bajarildi{% else %}Jarayonda{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>Buyurtmalar yo'q</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <div class="card">
+        <div class="no-data">
+            <div style="font-size: 64px; margin-bottom: 16px;">😔</div>
+            <h2 style="color: var(--gray-600);">Ishchi topilmadi</h2>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+</div>
+{% endblock %}

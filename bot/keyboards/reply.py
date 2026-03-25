@@ -1,6 +1,6 @@
 """
 Reply keyboards (buttons under input).
-Main menu: Services, Flowers, Profile, Support, About.
+Main menu: Services, Profile, Support, About.
 Sub-menus: only sub-buttons + Back (no parent button repeated).
 """
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -8,22 +8,25 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemo
 from bot.utils.texts import get_text
 
 
-def main_menu_keyboard(lang: str = "ru") -> ReplyKeyboardMarkup:
-    """Main menu: Services, Flowers, Profile, Support, About."""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=get_text(lang, "btn_services")),
-                KeyboardButton(text=get_text(lang, "btn_flowers")),
-            ],
-            [
-                KeyboardButton(text=get_text(lang, "btn_profile")),
-                KeyboardButton(text=get_text(lang, "btn_about")),
-            ],
-            [
-                KeyboardButton(text=get_text(lang, "btn_support")),
-            ],
+def main_menu_keyboard(lang: str = "ru", is_admin: bool = False) -> ReplyKeyboardMarkup:
+    """Main menu: Services, Profile, Support, About. Admin has Analytics."""
+    keyboard = [
+        [
+            KeyboardButton(text=get_text(lang, "btn_services")),
+            # KeyboardButton(text=get_text(lang, "btn_flowers")),  # COMMENTED OUT
         ],
+        [
+            KeyboardButton(text=get_text(lang, "btn_profile")),
+            KeyboardButton(text=get_text(lang, "btn_about")),
+        ],
+        [
+            KeyboardButton(text=get_text(lang, "btn_support")),
+        ],
+    ]
+    if is_admin:
+        keyboard.append([KeyboardButton(text="📊 Analiz")])
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
         resize_keyboard=True,
     )
 
