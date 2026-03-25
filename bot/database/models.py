@@ -310,6 +310,7 @@ ORDER_STATUS_PAID = "paid"
 ORDER_STATUS_IN_PROGRESS = "in_progress"
 ORDER_STATUS_COMPLETED = "completed"
 ORDER_STATUS_CANCELLED = "cancelled"
+ORDER_STATUS_FEEDBACK_PENDING = "feedback_pending"  # Bad feedback, waiting admin decision
 
 
 class Order(Base):
@@ -368,6 +369,7 @@ class Order(Base):
 
     # Customer feedback
     feedback: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    feedback_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="orders")
     grave: Mapped["Grave | None"] = relationship("Grave", lazy="selectin")
@@ -438,6 +440,39 @@ class Rating(Base):
     )
     value: Mapped[str] = mapped_column(String(20), nullable=False)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+    user: Mapped["User"] = relationship("User")
+    order: Mapped["Order"] = relationship("Order")
+
+
+# -----------------------------------------------------------------------------
+# Complaint
+# -----------------------------------------------------------------------------
+
+COMPLAINT_STATUS_PENDING = "pending"
+COMPLAINT_STATUS_RESOLVED = "resolved"
+COMPLAINT_STATUS_RECLEANING = "recleaning"
+
+
+class Complaint(Base):
+    """User complaint about completed order with photos."""
+
+    __tablename__ = "complaints"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    order_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    photo_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of file_ids
+    status: Mapped[str] = mapped_column(String(30), default=COMPLAINT_STATUS_PENDING, nullable=False)
+    admin_response: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

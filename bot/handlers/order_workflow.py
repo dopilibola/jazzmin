@@ -35,7 +35,9 @@ from bot.keyboards.inline import (
     photo_verify_inline,
     order_retry_inline,
     feedback_inline,
+    worker_retake_inline,
 )
+from bot.states.forms import FeedbackReasonState
 from bot.utils.texts import get_text
 from bot.utils.helpers import format_price
 from bot_config import TELEGRAM_GROUP, PAYMENT_BOT_TOKEN, BOT_TOKEN, ADMIN_IDS
@@ -65,11 +67,14 @@ class RetryState(StatesGroup):
 # -----------------------------------------------------------------------------
 
 
-async def send_order_to_group(bot: Bot, order, grave=None, is_service: bool = True) -> None:
+async def send_order_to_group(bot: Bot, order, grave=None, is_service: bool = True, items_list: list = None) -> None:
     """Send order notification to Telegram group after payment confirmed.
 
     ONLY for services. Flowers are handled directly in bot without group.
     User info and payment method are NOT shown for privacy.
+
+    Args:
+        items_list: Pre-loaded list of item titles (to avoid expired session issues)
     """
     if not is_service:
         # Flowers don't go to group
@@ -109,10 +114,15 @@ async def send_order_to_group(bot: Bot, order, grave=None, is_service: bool = Tr
         if order.death_year:
             death_year = order.death_year
 
-        # Get services
+        # Get services - use pre-loaded items_list if provided
         services_text = ""
-        if order.items:
-            services_text = "\n".join([f"   • {item.title}" for item in order.items])
+        if items_list:
+            services_text = "\n".join([f"   • {title}" for title in items_list])
+        elif order.items:
+            try:
+                services_text = "\n".join([f"   • {item.title}" for item in order.items])
+            except Exception:
+                services_text = "   —"
         else:
             services_text = "   —"
 
@@ -495,7 +505,7 @@ async def retry_order_callback(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("feedback:"))
-async def feedback_callback(callback: CallbackQuery) -> None:
+async def feedback_callback(callback: CallbackQuery, state: FSMContext) -> None:
     """Handle customer feedback."""
     await callback.answer()
 
@@ -514,29 +524,344 @@ async def feedback_callback(callback: CallbackQuery) -> None:
         worker_username = order.assigned_username or "Ishchi"
         cemetery = order.grave.cemetery if order.grave else (order.cemetery.name if order.cemetery else "—")
         deceased = order.grave.deceased_full_name if order.grave else (order.deceased_full_name or "—")
+        user_lang = order.user.language if order.user else "uz"
 
-        # Save feedback
-        order.feedback = rating
+        if rating == "good":
+            # Save feedback
+            order.feedback = rating
+            await session.commit()
+
+            # Update customer message
+            await callback.message.edit_text(
+                callback.message.text + f"\n\n👍 Fikringiz uchun rahmat!"
+            )
+
+            # Send feedback to worker in group
+            if TELEGRAM_GROUP:
+                try:
+                    await _send_to_group(
+                        f"📊 FEEDBACK - Buyurtma #{order_id}\n\n"
+                        f"👷 @{worker_username}\n"
+                        f"🏛 {cemetery} - {deceased}\n\n"
+                        f"👍 Yaxshi bajarilgan! ✅"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send feedback to group: {e}")
+        else:
+            # Bad feedback - ask for reason
+            await state.set_state(FeedbackReasonState.waiting_reason)
+            await state.update_data(
+                order_id=order_id,
+                worker_username=worker_username,
+                cemetery=cemetery,
+                deceased=deceased,
+                user_lang=user_lang,
+            )
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n👎 Yomon"
+            )
+
+            # Ask for reason
+            reason_prompt = get_text(user_lang, "feedback_reason_prompt")
+            await callback.message.answer(reason_prompt)
+
+
+# -----------------------------------------------------------------------------
+# Feedback reason handler (when user writes why they didn't like the service)
+# -----------------------------------------------------------------------------
+
+
+@router.message(FeedbackReasonState.waiting_reason, F.text)
+async def receive_feedback_reason(message: Message, state: FSMContext) -> None:
+    """Receive feedback reason from customer who clicked 'bad'.
+
+    Simple flow:
+    1. Send to admin (BOT_TOKEN3) with photos + reason
+    2. Send to Telegram group
+    3. Auto-send to worker with retake/cancel buttons
+    """
+    reason_text = (message.text or "").strip()
+    if len(reason_text) < 5:
+        await message.answer("Iltimos, sababni batafsilroq yozing (kamida 5 ta belgi).")
+        return
+
+    data = await state.get_data()
+    order_id = data.get("order_id")
+    worker_username = data.get("worker_username", "Ishchi")
+    cemetery = data.get("cemetery", "—")
+    deceased = data.get("deceased", "—")
+    user_lang = data.get("user_lang", "uz")
+
+    if not order_id:
+        await state.clear()
+        return
+
+    async with async_session_factory() as session:
+        order = await get_order_by_id(session, order_id)
+        if not order:
+            await state.clear()
+            return
+
+        worker_telegram_id = order.assigned_telegram_id or 0
+        photo1 = order.photo1_file_id
+        photo2 = order.photo2_file_id
+
+        # Save feedback with reason
+        order.feedback = "bad"
+        order.feedback_reason = reason_text
         await session.commit()
 
-    # Update customer message
-    feedback_emoji = "👍" if rating == "good" else "👎"
-    await callback.message.edit_text(
-        callback.message.text + f"\n\n{feedback_emoji} Fikringiz uchun rahmat!"
-    )
+    await state.clear()
 
-    # Send feedback to worker in group
-    if TELEGRAM_GROUP:
-        feedback_text = "Yaxshi bajarilgan! ✅" if rating == "good" else "Yaxshilash kerak 📝"
+    # Notify customer
+    await message.answer(get_text(user_lang, "feedback_reason_received"))
+
+    # Send to admin via BOT_TOKEN3 with photos and action buttons
+    if PAYMENT_BOT_TOKEN:
         try:
-            await _send_to_group(
-                f"📊 FEEDBACK - Buyurtma #{order_id}\n\n"
-                f"👷 @{worker_username}\n"
-                f"🏛 {cemetery} - {deceased}\n\n"
-                f"{feedback_emoji} {feedback_text}"
+            await _send_bad_feedback_to_admin(
+                order_id=order_id,
+                worker_telegram_id=worker_telegram_id,
+                worker_username=worker_username,
+                cemetery=cemetery,
+                deceased=deceased,
+                reason_text=reason_text,
+                photo1_file_id=photo1,
+                photo2_file_id=photo2,
             )
         except Exception as e:
-            logger.error(f"Failed to send feedback to group: {e}")
+            logger.error(f"Failed to send bad feedback to admin: {e}")
+
+
+async def _send_bad_feedback_to_admin(
+    order_id: int,
+    worker_telegram_id: int,
+    worker_username: str,
+    cemetery: str,
+    deceased: str,
+    reason_text: str,
+    photo1_file_id: str | None,
+    photo2_file_id: str | None,
+) -> None:
+    """Send bad feedback with photos to admin via BOT_TOKEN3 with action buttons."""
+    from aiogram.client.session.aiohttp import AiohttpSession
+    from aiogram.client.default import DefaultBotProperties
+    from aiogram.enums import ParseMode
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
+    import socket
+
+    # First, download photos from main bot (file_ids are bot-specific)
+    photo_bytes = []
+    if photo1_file_id or photo2_file_id:
+        main_session = AiohttpSession()
+        main_session._connector_init["family"] = socket.AF_INET
+        main_bot = Bot(
+            token=BOT_TOKEN,
+            session=main_session,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        )
+        try:
+            for file_id in [photo1_file_id, photo2_file_id]:
+                if file_id:
+                    try:
+                        file = await main_bot.get_file(file_id)
+                        content = await main_bot.download_file(file.file_path)
+                        photo_bytes.append(content.read())
+                    except Exception as e:
+                        logger.error(f"Failed to download photo: {e}")
+        finally:
+            await main_bot.session.close()
+
+    verify_session = AiohttpSession()
+    verify_session._connector_init["family"] = socket.AF_INET
+    verify_bot = Bot(
+        token=PAYMENT_BOT_TOKEN,
+        session=verify_session,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
+
+    try:
+        caption = (
+            f"👎 SALBIY FEEDBACK - Buyurtma #{order_id}\n\n"
+            f"👷 Ishchi: @{worker_username}\n"
+            f"🏛 Qabriston: {cemetery}\n"
+            f"🪦 Marhum: {deceased}\n\n"
+            f"📝 <b>Mijoz sababi:</b>\n{reason_text}"
+        )
+
+        # Admin action buttons
+        admin_buttons = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Ishchiga yuborish",
+                        callback_data=f"badfb:toworker:{order_id}:{worker_telegram_id}",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔄 Guruhga qayta yuborish",
+                        callback_data=f"badfb:togroup:{order_id}",
+                    ),
+                ],
+            ]
+        )
+
+        # Send to all admins
+        for admin_id in ADMIN_IDS:
+            try:
+                # Send photos if available (re-upload as BufferedInputFile)
+                if len(photo_bytes) >= 2:
+                    media = [
+                        InputMediaPhoto(
+                            media=BufferedInputFile(photo_bytes[0], filename="photo1.jpg"),
+                            caption=caption
+                        ),
+                        InputMediaPhoto(
+                            media=BufferedInputFile(photo_bytes[1], filename="photo2.jpg")
+                        ),
+                    ]
+                    await verify_bot.send_media_group(chat_id=admin_id, media=media)
+                elif len(photo_bytes) == 1:
+                    await verify_bot.send_photo(
+                        chat_id=admin_id,
+                        photo=BufferedInputFile(photo_bytes[0], filename="photo.jpg"),
+                        caption=caption
+                    )
+                else:
+                    await verify_bot.send_message(chat_id=admin_id, text=caption)
+
+                # Send action buttons
+                await verify_bot.send_message(
+                    chat_id=admin_id,
+                    text="Nima qilasiz?",
+                    reply_markup=admin_buttons,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send to admin {admin_id}: {e}")
+    finally:
+        await verify_bot.session.close()
+
+
+# -----------------------------------------------------------------------------
+# Reclean callbacks (worker accepts/cancels reclean request from complaint)
+# -----------------------------------------------------------------------------
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("reclean:"))
+async def reclean_callback(callback: CallbackQuery) -> None:
+    """Handle worker's decision on reclean request from complaint."""
+    await callback.answer()
+
+    parts = callback.data.split(":")
+    if len(parts) < 3:
+        return
+
+    action = parts[1]  # "accept" or "cancel"
+    order_id = int(parts[2])
+
+    async with async_session_factory() as session:
+        order = await get_order_by_id(session, order_id)
+        if not order:
+            await callback.message.edit_text("Buyurtma topilmadi")
+            return
+
+        worker_username = order.assigned_username or "Ishchi"
+        worker_telegram_id = order.assigned_telegram_id or 0
+        cemetery = order.grave.cemetery if order.grave else (order.cemetery.name if order.cemetery else "—")
+        deceased = order.grave.deceased_full_name if order.grave else (order.deceased_full_name or "—")
+
+        district = "—"
+        if order.district:
+            district = order.district.name_uz if hasattr(order.district, 'name_uz') else str(order.district)
+
+        services_text = ""
+        if order.items:
+            services_text = "\n".join([f"   • {item.title}" for item in order.items])
+        else:
+            services_text = "   —"
+
+        total_price = order.total_price
+
+        if action == "accept":
+            # Verify this is the assigned worker
+            if len(parts) >= 4:
+                expected_worker_id = int(parts[3])
+                if callback.from_user.id != expected_worker_id:
+                    await callback.answer("Bu buyurtma sizga tegishli emas!", show_alert=True)
+                    return
+
+            # Worker accepts re-cleaning
+            order.status = "in_progress"
+            order.photo1_file_id = None
+            order.photo2_file_id = None
+            order.photos_uploaded_at = None
+            order.feedback = None
+            order.feedback_reason = None
+            order.assigned_at = datetime.utcnow()
+            order.reminder_sent = False
+            await session.commit()
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n✅ Siz qayta tozalashni qabul qildingiz. 3 soat ichida 2 ta rasm yuboring."
+            )
+
+            # Re-initialize photo tracking
+            _photo_uploads[order_id] = {
+                "worker_id": worker_telegram_id,
+                "worker_username": worker_username,
+                "photos": [],
+                "cemetery": cemetery,
+                "deceased": deceased,
+            }
+
+            # Notify in group
+            if TELEGRAM_GROUP:
+                try:
+                    await _send_to_group(
+                        f"@{worker_username} ✅ Buyurtma #{order_id}ni qayta tozalash uchun oldi.\n"
+                        f"⏰ 3 soat ichida 2 ta rasm kutilmoqda."
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to notify group: {e}")
+
+        else:  # action == "cancel"
+            # Worker declines - reset order for new worker
+            order.assigned_telegram_id = None
+            order.assigned_username = None
+            order.assigned_at = None
+            order.photo1_file_id = None
+            order.photo2_file_id = None
+            order.photos_uploaded_at = None
+            order.status = "paid"
+            order.feedback = None
+            order.feedback_reason = None
+            order.reminder_sent = False
+            await session.commit()
+
+            # Clean up photo tracking
+            _photo_uploads.pop(order_id, None)
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n❌ Siz qayta tozalashdan voz kechdingiz. Buyurtma guruhga yuborildi."
+            )
+
+            # Post to group for new workers
+            if TELEGRAM_GROUP:
+                try:
+                    await _send_to_group_with_buttons(
+                        f"🔄 QAYTA BUYURTMA #{order_id}\n\n"
+                        f"⚠️ Oldingi ishchi qayta tozalashdan voz kechdi!\n\n"
+                        f"📍 Tuman: {district}\n"
+                        f"🏛 Qabriston: {cemetery}\n"
+                        f"🪦 Marhum: {deceased}\n\n"
+                        f"🛒 Xizmat:\n{services_text}\n\n"
+                        f"💰 Jami: {format_price(total_price, 'uz')}",
+                        order_take_inline(order_id)
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to post order to group: {e}")
 
 
 # -----------------------------------------------------------------------------

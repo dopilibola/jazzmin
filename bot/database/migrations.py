@@ -97,3 +97,17 @@ async def run_migrations(engine: AsyncEngine) -> None:
                     pass
                 else:
                     logger.debug("Migration orders.%s: %s", col, e)
+
+        # Add feedback_reason column to orders
+        try:
+            await conn.execute(
+                text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS feedback_reason TEXT")
+            )
+            await conn.commit()
+            logger.info("Migration: added orders.feedback_reason")
+        except Exception as e:
+            err = str(e).lower()
+            if "duplicate" in err or "already exists" in err:
+                pass
+            else:
+                logger.debug("Migration orders.feedback_reason: %s", e)

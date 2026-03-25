@@ -17,14 +17,17 @@ from aiogram.enums import ParseMode  # noqa: E402
 from aiogram.fsm.storage.memory import MemoryStorage  # noqa: E402
 
 from bot.database.db import close_db, init_db  # noqa: E402
+from bot.middlewares.analytics import AnalyticsMiddleware, StateTrackingMiddleware  # noqa: E402
 from bot.middlewares.language import LanguageMiddleware  # noqa: E402
 from bot.middlewares.registration import RegistrationMiddleware, clear_all_reg_cache  # noqa: E402
 from bot.middlewares.retry import RetryMiddleware  # noqa: E402
 from bot.handlers import (  # noqa: E402
     about,
+    analytics,
     cart,
     checkout,
-    flowers,
+    complaint,
+    # flowers,  # COMMENTED OUT
     graves,
     orders,
     payment,
@@ -108,6 +111,8 @@ async def main() -> None:
     _main_bot_instance = bot
 
     dp = Dispatcher(storage=MemoryStorage())
+    dp.update.outer_middleware(AnalyticsMiddleware())  # Analytics first - tracks everything
+    dp.update.outer_middleware(StateTrackingMiddleware())  # Track state transitions
     dp.update.outer_middleware(RetryMiddleware())
     dp.update.outer_middleware(LanguageMiddleware())
     dp.update.outer_middleware(RegistrationMiddleware())
@@ -115,7 +120,7 @@ async def main() -> None:
     dp.include_router(profile.router)
     dp.include_router(graves.router)
     dp.include_router(services.router)
-    dp.include_router(flowers.router)
+    # dp.include_router(flowers.router)  # COMMENTED OUT
     dp.include_router(cart.router)
     dp.include_router(checkout.router)
     dp.include_router(payment.router)
@@ -123,6 +128,8 @@ async def main() -> None:
     dp.include_router(submission.router)
     dp.include_router(support.router)
     dp.include_router(about.router)
+    dp.include_router(analytics.router)
+    dp.include_router(complaint.router)
     dp.include_router(order_workflow_router)
     dp.startup.register(on_startup)
     dp.shutdown.register(close_db)

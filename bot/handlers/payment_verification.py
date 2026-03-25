@@ -11,14 +11,21 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery, InputMediaPhoto
+from aiogram.types import CallbackQuery, InputMediaPhoto, Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.database.db import async_session_factory
 from bot.database.queries import get_order_by_id, update_order_status, get_grave_by_id
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
 from bot.utils.texts import get_text
-from bot.keyboards.inline import order_retry_inline, feedback_inline
-from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN, TELEGRAM_GROUP
+from bot.keyboards.inline import (
+    order_retry_inline,
+    feedback_inline,
+    bad_feedback_admin_inline,
+    worker_retake_inline,
+    order_take_inline,
+)
+from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN, TELEGRAM_GROUP, ADMIN_IDS
+from bot.utils.helpers import format_price
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +69,26 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 deceased = grave.deceased_full_name or "—"
 
         if action == "true":
+            # Check if order contains services BEFORE commit (items expire after commit)
+            is_service = False
+            items_list = []  # Store item titles before commit
+            if order.items:
+                logger.info(f"Order #{order_id} has {len(order.items)} items")
+                for item in order.items:
+                    items_list.append(item.title)
+                    logger.info(f"  Item: {item.title}, type: {item.item_type}")
+                    if item.item_type == "service":
+                        is_service = True
+            else:
+                logger.warning(f"Order #{order_id} has NO items!")
+
+            logger.info(f"Order #{order_id}: is_service={is_service}, items_list={items_list}")
+
+            # Get grave info before commit
+            grave = None
+            if grave_id and user_id:
+                grave = await get_grave_by_id(session, grave_id, user_id)
+
             # Update order status to paid
             await update_order_status(session, order_id, ORDER_STATUS_PAID)
             await session.commit()
@@ -83,20 +110,8 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 # Send order to Telegram group for workers (ONLY services, not flowers)
                 from bot.handlers.order_workflow import send_order_to_group
 
-                # Check if order contains services (not just flowers)
-                is_service = False
-                if order.items:
-                    for item in order.items:
-                        if item.item_type == "service":
-                            is_service = True
-                            break
-
-                grave = None
-                if grave_id and user_id:
-                    grave = await get_grave_by_id(session, grave_id, user_id)
-
                 # Only send to group if it's a service order
-                await send_order_to_group(main_bot, order, grave, is_service=is_service)
+                await send_order_to_group(main_bot, order, grave, is_service=is_service, items_list=items_list)
 
                 await main_bot.session.close()
             except Exception as e:
@@ -257,6 +272,438 @@ async def photo_verification_callback(callback: CallbackQuery) -> None:
                     await main_bot.session.close()
                 except Exception as e:
                     logger.error(f"Failed to notify worker: {e}")
+
+
+# -----------------------------------------------------------------------------
+# Bad feedback admin actions (Re-feedback or Redo order)
+# -----------------------------------------------------------------------------
+
+
+@verification_router.callback_query(lambda c: c.data and c.data.startswith("badfb:"))
+async def bad_feedback_admin_callback(callback: CallbackQuery) -> None:
+    """Handle admin actions on bad feedback: toworker or togroup."""
+    await callback.answer()
+
+    parts = callback.data.split(":")
+    if len(parts) < 3:
+        return
+
+    action = parts[1]  # "toworker" or "togroup"
+    order_id = int(parts[2])
+
+    async with async_session_factory() as session:
+        order = await get_order_by_id(session, order_id)
+        if not order:
+            await callback.message.edit_text("Buyurtma topilmadi")
+            return
+
+        worker_telegram_id = order.assigned_telegram_id or 0
+        worker_username = order.assigned_username or "Ishchi"
+        cemetery = order.grave.cemetery if order.grave else (order.cemetery.name if order.cemetery else "—")
+        deceased = order.grave.deceased_full_name if order.grave else (order.deceased_full_name or "—")
+        reason_text = order.feedback_reason or ""
+
+        district = "—"
+        if order.district:
+            district = order.district.name_uz if hasattr(order.district, 'name_uz') else str(order.district)
+
+        services_text = ""
+        if order.items:
+            services_text = "\n".join([f"   • {item.title}" for item in order.items])
+        else:
+            services_text = "   —"
+
+        total_price = order.total_price
+
+        if action == "toworker":
+            # Send to worker with retake/cancel buttons
+            if len(parts) < 5:
+                return
+            worker_telegram_id = int(parts[4])
+
+            try:
+                main_session = AiohttpSession()
+                main_session._connector_init["family"] = socket.AF_INET
+                main_bot = Bot(
+                    token=BOT_TOKEN,
+                    session=main_session,
+                    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                )
+
+                # Send directly to worker
+                await main_bot.send_message(
+                    chat_id=worker_telegram_id,
+                    text=f"⚠️ BUYURTMA QAYTARILDI - #{order_id}\n\n"
+                         f"🏛 Qabriston: {cemetery}\n"
+                         f"🪦 Marhum: {deceased}\n\n"
+                         f"👎 Mijoz ishdan norozi. Qayta bajarasizmi?",
+                    reply_markup=worker_retake_inline(order_id, worker_telegram_id),
+                )
+
+                # Also notify in group
+                if TELEGRAM_GROUP:
+                    await main_bot.send_message(
+                        chat_id=int(TELEGRAM_GROUP),
+                        text=f"⚠️ @{worker_username} - Buyurtma #{order_id} qaytarildi!\n"
+                             f"Mijoz noroziligi sababli qayta bajarish kerak.",
+                    )
+
+                await main_bot.session.close()
+            except Exception as e:
+                logger.error(f"Failed to send redo request to worker: {e}")
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n✅ Ishchiga yuborildi"
+            )
+
+        elif action == "togroup":
+            # Reset order and post to group directly
+            order.assigned_telegram_id = None
+            order.assigned_username = None
+            order.assigned_at = None
+            order.photo1_file_id = None
+            order.photo2_file_id = None
+            order.photos_uploaded_at = None
+            order.status = "paid"
+            order.feedback = None
+            order.feedback_reason = None
+            order.reminder_sent = False
+            await session.commit()
+
+            try:
+                main_session = AiohttpSession()
+                main_session._connector_init["family"] = socket.AF_INET
+                main_bot = Bot(
+                    token=BOT_TOKEN,
+                    session=main_session,
+                    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                )
+
+                if TELEGRAM_GROUP:
+                    caption = (
+                        f"🔄 QAYTA BUYURTMA #{order_id}\n\n"
+                        f"⚠️ Mijoz oldingi ishdan norozi!\n\n"
+                        f"📍 Tuman: {district}\n"
+                        f"🏛 Qabriston: {cemetery}\n"
+                        f"🪦 Marhum: {deceased}\n\n"
+                        f"🛒 Xizmat:\n{services_text}\n\n"
+                        f"💰 Jami: {format_price(total_price, 'uz')}"
+                    )
+
+                    await main_bot.send_message(
+                        chat_id=int(TELEGRAM_GROUP),
+                        text=caption,
+                        reply_markup=order_take_inline(order_id),
+                    )
+
+                await main_bot.session.close()
+            except Exception as e:
+                logger.error(f"Failed to post order to group: {e}")
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n🔄 Guruhga qayta yuborildi"
+            )
+
+
+# -----------------------------------------------------------------------------
+# Worker retake/cancel actions
+# -----------------------------------------------------------------------------
+
+
+@verification_router.callback_query(lambda c: c.data and c.data.startswith("retake:"))
+async def worker_retake_callback(callback: CallbackQuery) -> None:
+    """Handle worker decision to retake or cancel returned order."""
+    await callback.answer()
+
+    parts = callback.data.split(":")
+    if len(parts) < 4:
+        return
+
+    action = parts[1]  # "accept" or "cancel"
+    order_id = int(parts[2])
+    worker_telegram_id = int(parts[3])
+
+    # Verify this is the assigned worker
+    if callback.from_user.id != worker_telegram_id:
+        await callback.answer("Bu buyurtma sizga tegishli emas!", show_alert=True)
+        return
+
+    async with async_session_factory() as session:
+        order = await get_order_by_id(session, order_id)
+        if not order:
+            await callback.message.edit_text("Buyurtma topilmadi")
+            return
+
+        worker_username = order.assigned_username or "Ishchi"
+        cemetery = order.grave.cemetery if order.grave else (order.cemetery.name if order.cemetery else "—")
+        deceased = order.grave.deceased_full_name if order.grave else (order.deceased_full_name or "—")
+        district = "—"
+        if order.district:
+            district = order.district.name_uz if hasattr(order.district, 'name_uz') else str(order.district)
+
+        services_text = ""
+        if order.items:
+            services_text = "\n".join([f"   • {item.title}" for item in order.items])
+        else:
+            services_text = "   —"
+
+        total_price = order.total_price
+
+        if action == "accept":
+            # Worker accepts to redo
+            order.status = "in_progress"
+            order.photo1_file_id = None
+            order.photo2_file_id = None
+            order.photos_uploaded_at = None
+            order.feedback = None
+            order.feedback_reason = None
+            order.assigned_at = datetime.utcnow()
+            order.reminder_sent = False
+            await session.commit()
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n✅ Siz buyurtmani qayta oldingiz. 3 soat ichida 2 ta rasm yuboring."
+            )
+
+            # Notify in group
+            try:
+                main_session = AiohttpSession()
+                main_session._connector_init["family"] = socket.AF_INET
+                main_bot = Bot(
+                    token=BOT_TOKEN,
+                    session=main_session,
+                    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                )
+
+                if TELEGRAM_GROUP:
+                    await main_bot.send_message(
+                        chat_id=int(TELEGRAM_GROUP),
+                        text=f"@{worker_username} ✅ Buyurtma #{order_id}ni qayta oldi.\n"
+                             f"⏰ 3 soat ichida 2 ta rasm kutilmoqda.",
+                    )
+
+                # Re-initialize photo tracking
+                from bot.handlers.order_workflow import _photo_uploads
+                _photo_uploads[order_id] = {
+                    "worker_id": worker_telegram_id,
+                    "worker_username": worker_username,
+                    "photos": [],
+                    "cemetery": cemetery,
+                    "deceased": deceased,
+                }
+
+                await main_bot.session.close()
+            except Exception as e:
+                logger.error(f"Failed to notify group: {e}")
+
+        else:  # action == "cancel"
+            # Worker declines - reset order for new worker
+            order.assigned_telegram_id = None
+            order.assigned_username = None
+            order.assigned_at = None
+            order.photo1_file_id = None
+            order.photo2_file_id = None
+            order.photos_uploaded_at = None
+            order.status = "paid"
+            order.feedback = None
+            order.feedback_reason = None
+            order.reminder_sent = False
+            await session.commit()
+
+            await callback.message.edit_text(
+                callback.message.text + "\n\n❌ Siz buyurtmadan voz kechdingiz. Guruhga qayta yuborildi."
+            )
+
+            # Post to group for new workers
+            try:
+                main_session = AiohttpSession()
+                main_session._connector_init["family"] = socket.AF_INET
+                main_bot = Bot(
+                    token=BOT_TOKEN,
+                    session=main_session,
+                    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                )
+
+                if TELEGRAM_GROUP:
+                    caption = (
+                        f"🔄 QAYTA BUYURTMA #{order_id}\n\n"
+                        f"⚠️ Oldingi ishchi voz kechdi!\n\n"
+                        f"📍 Tuman: {district}\n"
+                        f"🏛 Qabriston: {cemetery}\n"
+                        f"🪦 Marhum: {deceased}\n\n"
+                        f"🛒 Xizmat:\n{services_text}\n\n"
+                        f"💰 Jami: {format_price(total_price, 'uz')}"
+                    )
+
+                    await main_bot.send_message(
+                        chat_id=int(TELEGRAM_GROUP),
+                        text=caption,
+                        reply_markup=order_take_inline(order_id),
+                    )
+
+                await main_bot.session.close()
+            except Exception as e:
+                logger.error(f"Failed to post order to group: {e}")
+
+
+# -----------------------------------------------------------------------------
+# Complaint admin callbacks
+# -----------------------------------------------------------------------------
+
+# State storage for admin response
+_admin_response_state = {}  # {admin_id: {"complaint_id": int, "user_id": int}}
+
+
+@verification_router.callback_query(lambda c: c.data and c.data.startswith("complaint:"))
+async def complaint_admin_callback(callback: CallbackQuery) -> None:
+    """Handle admin actions on complaint: respond or reclean."""
+    await callback.answer()
+
+    parts = callback.data.split(":")
+    if len(parts) < 3:
+        return
+
+    action = parts[1]  # "respond" or "reclean"
+
+    if action == "respond":
+        # Admin wants to respond to user
+        if len(parts) < 4:
+            return
+        complaint_id = int(parts[2])
+        user_id = int(parts[3])
+
+        _admin_response_state[callback.from_user.id] = {
+            "complaint_id": complaint_id,
+            "user_id": user_id,
+        }
+
+        await callback.message.edit_text(
+            callback.message.text + "\n\n📝 Mijozga yubormoqchi bo'lgan xabaringizni yozing:"
+        )
+
+    elif action == "reclean":
+        # Admin wants to send for re-cleaning
+        if len(parts) < 5:
+            return
+        complaint_id = int(parts[2])
+        order_id = int(parts[3])
+        worker_telegram_id = int(parts[4])
+
+        async with async_session_factory() as session:
+            order = await get_order_by_id(session, order_id)
+            if not order:
+                await callback.message.edit_text("Buyurtma topilmadi")
+                return
+
+            worker_username = order.assigned_username or "Ishchi"
+            cemetery = order.grave.cemetery if order.grave else (order.cemetery.name if order.cemetery else "—")
+            deceased = order.grave.deceased_full_name if order.grave else (order.deceased_full_name or "—")
+            reason = order.feedback_reason or "Sabab ko'rsatilmagan"
+
+            # Update complaint status
+            from sqlalchemy import select
+            from bot.database.models import Complaint, COMPLAINT_STATUS_RECLEANING
+            result = await session.execute(
+                select(Complaint).where(Complaint.id == complaint_id)
+            )
+            complaint = result.scalar_one_or_none()
+            if complaint:
+                complaint.status = COMPLAINT_STATUS_RECLEANING
+                await session.commit()
+
+        # Send to worker
+        try:
+            main_session = AiohttpSession()
+            main_session._connector_init["family"] = socket.AF_INET
+            main_bot = Bot(
+                token=BOT_TOKEN,
+                session=main_session,
+                default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+            )
+
+            worker_buttons = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="🔁 Qayta tozalashni qabul qilish",
+                            callback_data=f"reclean:accept:{order_id}:{worker_telegram_id}",
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="❌ Bekor qilish",
+                            callback_data=f"reclean:cancel:{order_id}",
+                        ),
+                    ],
+                ]
+            )
+
+            await main_bot.send_message(
+                chat_id=worker_telegram_id,
+                text=f"⚠️ <b>QAYTA TOZALASH SO'ROVI</b>\n\n"
+                     f"📋 Buyurtma: #{order_id}\n"
+                     f"🏛 Qabriston: {cemetery}\n"
+                     f"🪦 Marhum: {deceased}\n\n"
+                     f"📝 Mijoz shikoyati:\n{reason}\n\n"
+                     f"Qayta tozalaysizmi?",
+                reply_markup=worker_buttons,
+            )
+
+            await main_bot.session.close()
+        except Exception as e:
+            logger.error(f"Failed to send reclean request to worker: {e}")
+
+        await callback.message.edit_text(
+            callback.message.text + "\n\n✅ Ishchiga qayta tozalash so'rovi yuborildi"
+        )
+
+
+@verification_router.message(F.text)
+async def admin_response_text(message: Message) -> None:
+    """Receive admin response text and send to user."""
+    admin_id = message.from_user.id
+
+    if admin_id not in _admin_response_state:
+        return
+
+    state_data = _admin_response_state.pop(admin_id)
+    complaint_id = state_data["complaint_id"]
+    user_id = state_data["user_id"]
+    response_text = message.text.strip()
+
+    # Update complaint in database
+    async with async_session_factory() as session:
+        from sqlalchemy import select
+        from bot.database.models import Complaint, COMPLAINT_STATUS_RESOLVED
+        result = await session.execute(
+            select(Complaint).where(Complaint.id == complaint_id)
+        )
+        complaint = result.scalar_one_or_none()
+        if complaint:
+            complaint.admin_response = response_text
+            complaint.status = COMPLAINT_STATUS_RESOLVED
+            await session.commit()
+
+    # Send to user via main bot
+    try:
+        main_session = AiohttpSession()
+        main_session._connector_init["family"] = socket.AF_INET
+        main_bot = Bot(
+            token=BOT_TOKEN,
+            session=main_session,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        )
+
+        await main_bot.send_message(
+            chat_id=user_id,
+            text=f"📬 <b>Admin javobi:</b>\n\n{response_text}",
+        )
+
+        await main_bot.session.close()
+    except Exception as e:
+        logger.error(f"Failed to send response to user: {e}")
+
+    await message.answer("✅ Javob mijozga yuborildi!")
 
 
 async def run_verification_bot():

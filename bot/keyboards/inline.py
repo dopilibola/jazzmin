@@ -506,6 +506,46 @@ def feedback_inline(order_id: int, lang: str) -> InlineKeyboardMarkup:
     )
 
 
+def bad_feedback_admin_inline(order_id: int, user_telegram_id: int, worker_telegram_id: int) -> InlineKeyboardMarkup:
+    """Admin buttons when user gives bad feedback: Re-feedback or Redo order."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔄 Qayta feedback so'rash",
+                    callback_data=f"badfb:refeedback:{order_id}:{user_telegram_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🧹 Qaytadan tozalash",
+                    callback_data=f"badfb:redo:{order_id}:{user_telegram_id}:{worker_telegram_id}",
+                ),
+            ],
+        ]
+    )
+
+
+def worker_retake_inline(order_id: int, worker_telegram_id: int) -> InlineKeyboardMarkup:
+    """Worker buttons to retake or cancel the returned order."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Buyurtmani qayta olish",
+                    callback_data=f"retake:accept:{order_id}:{worker_telegram_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="❌ Bekor qilish",
+                    callback_data=f"retake:cancel:{order_id}:{worker_telegram_id}",
+                ),
+            ],
+        ]
+    )
+
+
 def select_grave_for_order_inline(graves: list, lang: str, order_id: int) -> InlineKeyboardMarkup:
     """Select a grave for order, with Add New Grave as first option."""
     buttons = [
@@ -648,6 +688,39 @@ def cancel_inline(lang: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text=get_text(lang, "btn_cancel"),
                     callback_data="submission:cancel",
+                ),
+            ],
+        ]
+    )
+
+
+# -----------------------------------------------------------------------------
+# Analytics (Admin only)
+# -----------------------------------------------------------------------------
+
+
+def analytics_inline() -> InlineKeyboardMarkup:
+    """Analytics period selection for admins."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📊 24 soat",
+                    callback_data="analytics:24h",
+                ),
+                InlineKeyboardButton(
+                    text="📈 7 kun",
+                    callback_data="analytics:7d",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📉 30 kun",
+                    callback_data="analytics:30d",
+                ),
+                InlineKeyboardButton(
+                    text="⚡ Tezkor",
+                    callback_data="analytics:summary",
                 ),
             ],
         ]

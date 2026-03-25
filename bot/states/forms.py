@@ -84,12 +84,6 @@ class FlowerPaymentState(StatesGroup):
     upload_receipt = State()
 
 
-class ComplaintState(StatesGroup):
-    """Complaint: user writes complaint text."""
-
-    waiting_for_text = State()
-
-
 class RatingCommentState(StatesGroup):
     """Rating: optional comment after like/dislike."""
 
@@ -116,3 +110,16 @@ class UserSubmissionState(StatesGroup):
     relationship = State()
     photo_1 = State()
     photo_2 = State()
+
+
+class FeedbackReasonState(StatesGroup):
+    """Feedback: user writes reason why they didn't like the service."""
+
+    waiting_reason = State()
+
+
+class ComplaintState(StatesGroup):
+    """Complaint flow: text reason + multiple photos."""
+
+    waiting_text = State()
+    waiting_photos = State()
