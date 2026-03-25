@@ -30,6 +30,11 @@ from bot.database.queries import (
     mark_reminder_sent,
     get_overdue_orders,
 )
+from bot.services.finance import (
+    assign_worker_to_order as assign_worker_financial,
+    complete_order_financial,
+    return_order_financial,
+)
 from bot.keyboards.inline import (
     order_take_inline,
     photo_verify_inline,
@@ -181,6 +186,13 @@ async def take_order_callback(callback: CallbackQuery, state: FSMContext) -> Non
         # Assign order to worker
         await assign_order(session, order_id, worker_id, worker_username)
         await session.commit()
+
+        # Assign worker to financial record
+        try:
+            await assign_worker_financial(session, order_id, worker_id, worker_username)
+            await session.commit()
+        except Exception as e:
+            logger.debug(f"Financial worker assignment for order #{order_id}: {e}")
 
         # Get grave info for notification
         cemetery = "—"

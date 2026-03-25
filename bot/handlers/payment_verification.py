@@ -16,6 +16,12 @@ from aiogram.types import CallbackQuery, InputMediaPhoto, Message, InlineKeyboar
 from bot.database.db import async_session_factory
 from bot.database.queries import get_order_by_id, update_order_status, get_grave_by_id
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
+from bot.services.finance import (
+    create_financial_for_order,
+    complete_order_financial,
+    cancel_order_financial,
+    assign_worker_to_order as assign_worker_financial,
+)
 from bot.utils.texts import get_text
 from bot.keyboards.inline import (
     order_retry_inline,
@@ -93,6 +99,13 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
             await update_order_status(session, order_id, ORDER_STATUS_PAID)
             await session.commit()
 
+            # Create financial record for the order
+            try:
+                await create_financial_for_order(order_id)
+                logger.info(f"Created financial record for order #{order_id}")
+            except Exception as e:
+                logger.error(f"Failed to create financial record for order #{order_id}: {e}")
+
             # Notify user via main bot
             try:
                 main_session = AiohttpSession()
@@ -127,6 +140,13 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
             # Update order status to cancelled
             await update_order_status(session, order_id, ORDER_STATUS_CANCELLED)
             await session.commit()
+
+            # Cancel financial record if exists
+            try:
+                await cancel_order_financial(session, order_id)
+                await session.commit()
+            except Exception as e:
+                logger.debug(f"No financial to cancel for order #{order_id}: {e}")
 
             # Notify user via main bot
             try:
@@ -189,6 +209,14 @@ async def photo_verification_callback(callback: CallbackQuery) -> None:
             # Approved - send photos to customer
             order.status = "completed"
             await session.commit()
+
+            # Complete financial record and update worker earnings
+            try:
+                await complete_order_financial(session, order_id)
+                await session.commit()
+                logger.info(f"Completed financial record for order #{order_id}")
+            except Exception as e:
+                logger.error(f"Failed to complete financial for order #{order_id}: {e}")
 
             # Send photos to customer via main bot
             if user_telegram_id and order.photo1_file_id and order.photo2_file_id:

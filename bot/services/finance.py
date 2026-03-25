@@ -176,6 +176,108 @@ async def create_order_financial(
     return order_fin
 
 
+async def create_order_financial_simple(
+    session: AsyncSession,
+    order_id: int,
+    service_name: str,
+    final_price: int,
+    user_id: Optional[int] = None,
+    user_telegram_id: Optional[int] = None,
+    cemetery_name: Optional[str] = None,
+    platform_percent: Decimal = DEFAULT_PLATFORM_PERCENT,
+    worker_percent: Decimal = DEFAULT_WORKER_PERCENT,
+) -> OrderFinancial:
+    """Create financial record directly from order data (without ServiceCatalog).
+
+    Use this when the order is created from Django services that don't have
+    corresponding ServiceCatalog entries.
+    """
+    final_price_decimal = Decimal(str(final_price))
+
+    # Calculate earnings split
+    platform_earning = round_money(final_price_decimal * platform_percent / Decimal("100"))
+    worker_earning = round_money(final_price_decimal * worker_percent / Decimal("100"))
+
+    order_fin = OrderFinancial(
+        order_id=order_id,
+        user_id=user_id,
+        user_telegram_id=user_telegram_id,
+        service_id=None,  # No ServiceCatalog reference
+        service_name=service_name,
+        cemetery_id=None,  # No CemeteryPricing reference
+        cemetery_name=cemetery_name or "—",
+        base_price=final_price_decimal,
+        price_multiplier=Decimal("1.00"),
+        final_price=final_price_decimal,
+        platform_percent=platform_percent,
+        worker_percent=worker_percent,
+        platform_earning=platform_earning,
+        worker_earning=worker_earning,
+        status=ORDER_FIN_STATUS_PENDING,
+    )
+
+    session.add(order_fin)
+    await session.flush()
+    logger.info(f"Created simple order financial #{order_fin.id} for order #{order_id}")
+    return order_fin
+
+
+async def create_financial_for_order(order_id: int) -> Optional[OrderFinancial]:
+    """Create financial record for an existing order (public wrapper).
+
+    Fetches order from DB and creates financial record.
+    Returns None if order not found or financial already exists.
+    """
+    from bot.database.models import Order
+
+    async with async_session_factory() as session:
+        # Check if financial record already exists
+        result = await session.execute(
+            select(OrderFinancial).where(OrderFinancial.order_id == order_id)
+        )
+        if result.scalars().first():
+            logger.debug(f"Financial record already exists for order #{order_id}")
+            return None
+
+        # Get order
+        result = await session.execute(
+            select(Order).where(Order.id == order_id)
+        )
+        order = result.scalars().first()
+        if not order:
+            return None
+
+        # Get service name from items
+        service_name = "Xizmat"
+        cemetery_name = "—"
+
+        if order.items:
+            service_names = [item.title for item in order.items if item.item_type == "service"]
+            if service_names:
+                service_name = ", ".join(service_names)
+
+        if order.cemetery:
+            cemetery_name = order.cemetery.name
+
+        # Get user telegram_id
+        user_telegram_id = None
+        if order.user:
+            user_telegram_id = order.user.telegram_id
+
+        order_fin = await create_order_financial_simple(
+            session,
+            order_id=order.id,
+            service_name=service_name,
+            final_price=order.total_price,
+            user_id=order.user_id,
+            user_telegram_id=user_telegram_id,
+            cemetery_name=cemetery_name,
+        )
+
+        await session.commit()
+        return order_fin
+
+
 async def assign_worker_to_order(
     session: AsyncSession,
     order_id: int,
