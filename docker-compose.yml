@@ -20,14 +20,23 @@ services:
     image: nginx:1.25-alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
       - .:/app:ro
     depends_on:
       - jazzmin-web
     networks:
       - intranet
       - dressme_extranet
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
 
   telegram-bot:
     build: .
