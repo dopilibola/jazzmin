@@ -49,3 +49,6 @@ htmlcov/
 
 # Old standalone bot (merged into project)
 maskan_bot/
+
+# Certbot/SSL (host-level, not needed in Docker)
+certbot/
