@@ -17,9 +17,9 @@ else
 fi
 
 # Lokal ishga tushirishda Docker nomidan (db) localhost'ga o'tish
-if [ "$DB_HOST" = "db" ] && [ ! -f "/.dockerenv" ]; then
+if [ "$DB_HOST" = "jazzmin-db" ] && [ ! -f "/.dockerenv" ]; then
   export DB_HOST=127.0.0.1
-  echo "ℹ️ DB_HOST 'db' aniqlanib, lokal uchun 127.0.0.1 ga o'zgartirildi"
+  echo "ℹ️ DB_HOST 'jazzmin-db' aniqlanib, lokal uchun 127.0.0.1 ga o'zgartirildi"
 elif [ -z "$DB_HOST" ]; then
   export DB_HOST=127.0.0.1
   echo "ℹ️ DB_HOST belgilanmagan, 127.0.0.1 ga o'rnatildi"

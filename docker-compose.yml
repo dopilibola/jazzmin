@@ -1,8 +1,9 @@
 services:
   jazzmin-web:
     build: .
+    container_name: jazzmin-web
     ports:
-      - "8008:8000"
+      - "8009:8000"
     volumes:
       - .:/app
     env_file:
@@ -10,62 +11,38 @@ services:
     environment:
       - START_BOT=0
     depends_on:
-      - db
+      - jazzmin-db
     networks:
-      - intranet
-      - dressme_extranet
+      - jazzmin_network
     command: python manage.py runserver 0.0.0.0:8000
 
-  nginx:
-    image: nginx:1.25-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - .:/app:ro
-    depends_on:
-      - jazzmin-web
-    networks:
-      - intranet
-      - dressme_extranet
-
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
-
-  telegram-bot:
+  jazzmin-bot:
     build: .
+    container_name: jazzmin-bot
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
-      - db
+      - jazzmin-db
     networks:
-      - intranet
-      - dressme_extranet
+      - jazzmin_network
     restart: unless-stopped
     command: python bot_main.py
 
-  db:
+  jazzmin-db:
     image: postgres:15
+    container_name: jazzmin-db
     env_file:
       - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - jazzmin_postgres_data:/var/lib/postgresql/data
     networks:
-      - intranet
+      - jazzmin_network
 
 volumes:
-  postgres_data:
+  jazzmin_postgres_data:
 
 networks:
-  intranet:
+  jazzmin_network:
     driver: bridge
-  dressme_extranet:
-    external: true

@@ -94,8 +94,8 @@ WSGI_APPLICATION = 'bassic.wsgi.application'
 
 # Database
 DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
-if DB_HOST == 'db' and not os.path.exists('/.dockerenv'):
-    # "db" is the Docker service name; use localhost when running directly.
+if DB_HOST == 'jazzmin-db' and not os.path.exists('/.dockerenv'):
+    # "jazzmin-db" is the Docker service name; use localhost when running directly.
     DB_HOST = '127.0.0.1'
 
 DATABASES = {

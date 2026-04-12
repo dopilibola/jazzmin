@@ -11,7 +11,7 @@ if [ -f .env ]; then
 fi
 
 # Lokal ishga tushirishda Docker nomidan (db) localhost'ga o'tish
-if [ "$DB_HOST" = "db" ] && [ ! -f "/.dockerenv" ]; then
+if [ "$DB_HOST" = "jazzmin-db" ] && [ ! -f "/.dockerenv" ]; then
   export DB_HOST=127.0.0.1
 fi
 
