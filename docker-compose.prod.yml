@@ -17,6 +17,18 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  jazzmin-webapp:
+    restart: always
+    # Productionda --reload yo'q; bitta worker (kirish kodlari xotirada saqlanadi)
+    command: uvicorn webapp.main:app --host 0.0.0.0 --port 8000
+    environment:
+      - FRONT_URL=https://mas-kan.uz/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   jazzmin-db:
     restart: always
     logging:
