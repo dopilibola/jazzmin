@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Qabr qo'shish — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Qabr qo'shish</h1>
+  {% for e in errors or [] %}<div class="flash flash-error">{{ e }}</div>{% endfor %}
+  <form method="post" action="/graves/add">
+    <label>Viloyat</label>
+    <select name="region_id" id="region_id" required>
+      <option value="">— tanlang —</option>
+      {% for r in regions %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+    </select>
+    <label>Tuman</label>
+    <select name="district_id" id="district_id" required>
+      <option value="">— avval viloyatni tanlang —</option>
+    </select>
+    <label>Qabriston</label>
+    <select name="cemetery_id" id="cemetery_id" required>
+      <option value="">— avval tumanni tanlang —</option>
+    </select>
+    <label>Marhumning ism-familiyasi</label>
+    <input type="text" name="deceased_full_name" required>
+    <div class="row">
+      <div><label>Tug'ilgan yil</label><input type="number" name="birth_year" min="1800" max="2100"></div>
+      <div><label>Vafot yili</label><input type="number" name="death_year" min="1800" max="2100"></div>
+    </div>
+    <label>Qarindoshlik</label>
+    <select name="relationship">
+      {% for r in relationships %}<option value="{{ r }}">{{ relationship_label(r) }}</option>{% endfor %}
+    </select>
+    <label>Tug'ilgan va vafot sanasi aniqmi?</label>
+    <select name="dates_precise">
+      <option value="1">Aniq</option>
+      <option value="0">Taxminan</option>
+    </select>
+    <button type="submit" class="btn full">Saqlash</button>
+  </form>
+  <p class="center"><a href="/graves" class="link">← Orqaga</a></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const regionSel = document.getElementById('region_id');
+const districtSel = document.getElementById('district_id');
+const cemeterySel = document.getElementById('cemetery_id');
+
+function reset(sel, text) { sel.innerHTML = '<option value="">' + text + '</option>'; }
+
+regionSel.addEventListener('change', async () => {
+  reset(districtSel, '— yuklanmoqda... —');
+  reset(cemeterySel, '— avval tumanni tanlang —');
+  if (!regionSel.value) { reset(districtSel, '— avval viloyatni tanlang —'); return; }
+  const res = await fetch('/api/districts?region_id=' + regionSel.value);
+  const data = await res.json();
+  reset(districtSel, '— tanlang —');
+  data.forEach(d => districtSel.add(new Option(d.name, d.id)));
+});
+
+districtSel.addEventListener('change', async () => {
+  reset(cemeterySel, '— yuklanmoqda... —');
+  if (!districtSel.value) { reset(cemeterySel, '— avval tumanni tanlang —'); return; }
+  const res = await fetch('/api/cemeteries?district_id=' + districtSel.value);
+  const data = await res.json();
+  reset(cemeterySel, '— tanlang —');
+  data.forEach(c => cemeterySel.add(new Option(c.name, c.id)));
+});
+</script>
+{% endblock %}

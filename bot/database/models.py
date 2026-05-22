@@ -20,15 +20,20 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    """Customer profile (Telegram user)."""
+    """Customer profile — shared by the Telegram bot and the web app."""
 
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    # Telegram users have a telegram_id; web-only users have NULL here.
+    telegram_id: Mapped[int | None] = mapped_column(
+        BigInteger, unique=True, nullable=True
+    )
     full_name: Mapped[str] = mapped_column(String(200), default="", nullable=False)
     phone_number: Mapped[str] = mapped_column(String(30), default="", nullable=False)
     language: Mapped[str] = mapped_column(String(5), default="ru", nullable=False)
+    # PIN/password hash for web login (NULL for bot-only users).
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

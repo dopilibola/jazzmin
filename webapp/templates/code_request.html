@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{% if reset %}Parolni tiklash{% else %}Kod orqali kirish{% endif %} — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{% if reset %}Parolni tiklash{% else %}Kod orqali kirish{% endif %}</h1>
+  <p class="muted">
+    Telefon raqamingizni kiriting — Telegram botingizga 6 xonali
+    tasdiqlash kodi yuboriladi.
+  </p>
+  {% for e in errors or [] %}<div class="flash flash-error">{{ e }}</div>{% endfor %}
+  <form method="post" action="/code">
+    <input type="hidden" name="reset" value="{% if reset %}1{% else %}0{% endif %}">
+    <label>Telefon raqami</label>
+    <input type="tel" name="phone" value="{{ phone or '' }}" placeholder="90 123 45 67" required>
+    <button type="submit" class="btn full">Kod yuborish</button>
+  </form>
+  <p class="center"><a href="/login" class="link">← Parol bilan kirish</a></p>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -8,10 +9,9 @@ CHAT_ID = config('CHAT_ID')
 
 
 def index(request):
-    return render(request, 'index.html')
-
-def login2(request):
-    return render(request, 'login2.html')
+    return render(request, 'index.html', {
+        'webapp_login_url': settings.WEBAPP_LOGIN_URL,
+    })
 
 
 

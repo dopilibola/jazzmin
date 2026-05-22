@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Profil — Maskan{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Profil</h1>
+  <a href="/profile/edit" class="btn btn-sm">Tahrirlash</a>
+</div>
+<div class="card">
+  <div class="kv"><span>Ism-familiya</span><b>{{ user.full_name or "—" }}</b></div>
+  <div class="kv"><span>Telefon</span><b>{{ user.phone_number or "—" }}</b></div>
+  <div class="kv"><span>Hisob turi</span><b>{% if user.telegram_id %}Telegram + Web{% else %}Web{% endif %}</b></div>
+</div>
+
+<div class="page-head"><h2>Qabrlar ({{ graves|length }})</h2><a href="/graves" class="link">Hammasi →</a></div>
+<div class="card">
+  {% if graves %}
+    {% for g in graves[:5] %}
+    <div class="kv"><span>{{ g.deceased_full_name }}</span><b>{{ g.cemetery }}</b></div>
+    {% endfor %}
+  {% else %}<p class="muted">Qabr qo'shilmagan.</p>{% endif %}
+</div>
+
+<div class="page-head"><h2>Buyurtmalar ({{ orders|length }})</h2><a href="/orders" class="link">Hammasi →</a></div>
+<div class="card">
+  {% if orders %}
+    {% for o in orders[:5] %}
+    <div class="kv">
+      <span>#{{ o.id }} — {{ o.created_at.strftime('%d.%m.%Y') }}</span>
+      <b><span class="badge" style="background:{{ status_color(o.status) }}">{{ status_label(o.status) }}</span></b>
+    </div>
+    {% endfor %}
+  {% else %}<p class="muted">Buyurtma yo'q.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Kirish — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Kirish</h1>
+  {% for e in errors or [] %}<div class="flash flash-error">{{ e }}</div>{% endfor %}
+  <form method="post" action="/login">
+    <label>Telefon raqami</label>
+    <input type="tel" name="phone" value="{{ phone or '' }}" placeholder="90 123 45 67" required>
+    <label>Parol</label>
+    <input type="password" name="password" inputmode="numeric" required>
+    <button type="submit" class="btn full">Kirish</button>
+  </form>
+  <div class="auth-links">
+    <a href="/code">📲 Kod orqali kirish</a>
+    <a href="/code?reset=1">Parolni unutdingizmi?</a>
+  </div>
+  <hr>
+  <p class="muted center">
+    Hisobingiz yo'qmi? Ro'yxatdan o'tish faqat
+    <a href="https://t.me/Maskanuzbot" target="_blank" rel="noopener">Telegram bot</a> orqali.
+  </p>
+</div>
+{% endblock %}

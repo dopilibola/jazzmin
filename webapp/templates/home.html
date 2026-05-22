@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Maskan — qabr parvarishi xizmati{% endblock %}
+{% block content %}
+{% if not user %}
+  <section class="hero">
+    <h1>Maskan</h1>
+    <p>Qabr parvarishi xizmati. Botda qanday bo'lsa — saytda ham xuddi shunday.
+       Bitta hisob, bitta ma'lumot.</p>
+    <div class="hero-actions">
+      <a href="/login" class="btn">Kirish</a>
+      <a href="https://t.me/Maskanuzbot" target="_blank" rel="noopener" class="btn btn-outline">Telegram bot</a>
+    </div>
+    <p class="muted" style="margin-top:14px">Ro'yxatdan o'tish faqat Telegram bot orqali.</p>
+  </section>
+  <section class="features">
+    <div class="card feature"><h3>🪦 Qabrlar</h3><p>Yaqinlaringiz qabrlarini saqlang.</p></div>
+    <div class="card feature"><h3>🧹 Xizmatlar</h3><p>Tozalash va parvarish xizmatlariga buyurtma bering.</p></div>
+    <div class="card feature"><h3>📦 Buyurtmalar</h3><p>Buyurtma holatini kuzatib boring.</p></div>
+  </section>
+{% else %}
+  <section class="dash-head">
+    <h1>Assalomu alaykum, {{ user.full_name or "foydalanuvchi" }}!</h1>
+    <p class="muted">{{ user.phone_number }}</p>
+  </section>
+  <section class="stats">
+    <a href="/graves" class="card stat"><span class="stat-num">{{ graves|length }}</span><span>Qabrlar</span></a>
+    <a href="/orders" class="card stat"><span class="stat-num">{{ orders_count }}</span><span>Buyurtmalar</span></a>
+    <a href="/services" class="card stat"><span class="stat-num">+</span><span>Yangi buyurtma</span></a>
+  </section>
+  {% if orders %}
+  <section class="card">
+    <h2>So'nggi buyurtmalar</h2>
+    <table class="table">
+      <tr><th>№</th><th>Sana</th><th>Summa</th><th>Holat</th></tr>
+      {% for o in orders %}
+      <tr onclick="location.href='/orders/{{ o.id }}'" class="clickable">
+        <td>#{{ o.id }}</td>
+        <td>{{ o.created_at.strftime('%d.%m.%Y') }}</td>
+        <td>{{ format_price(o.total_price) }}</td>
+        <td><span class="badge" style="background:{{ status_color(o.status) }}">{{ status_label(o.status) }}</span></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </section>
+  {% else %}
+  <section class="card empty">
+    <p>Hali buyurtmangiz yo'q.</p>
+    <a href="/services" class="btn">Xizmatlarni ko'rish</a>
+  </section>
+  {% endif %}
+{% endif %}
+{% endblock %}

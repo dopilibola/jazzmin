@@ -12,19 +12,17 @@ class ProfileState(StatesGroup):
 
 
 class GraveState(StatesGroup):
-    """Add grave: region, district, cemetery, deceased, birth (choice->year[/month]), death, relationship."""
+    """Add grave: region, district, cemetery, deceased, birth year, death year,
+    relationship, then ONE 'are the dates exact?' question."""
 
     region = State()
     district = State()
     cemetery = State()
     deceased_full_name = State()
-    birth_choice = State()  # Aniq or Taxminan
     birth_year = State()
-    birth_month = State()  # only if Aniq
-    death_choice = State()
     death_year = State()
-    death_month = State()  # only if Aniq
     relationship_status = State()
+    dates_precise = State()  # bitta savol: tug'ilish va vafot aniqmi?
 
 
 class LanguageState(StatesGroup):

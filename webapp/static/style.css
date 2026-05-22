@@ -1,0 +1,185 @@
+/* Maskan veb-ilova — front sayt dizayni: qora + oltin + oq */
+:root {
+  --black: #000000;
+  --ink: #1a1a1a;
+  --gold: #ffd700;
+  --gold-soft: #fff3cd;
+  --bg: #ffffff;
+  --alt: #f8f9fa;
+  --text: #333333;
+  --muted: #666666;
+  --border: #f0f0f0;
+  --line: #e2e2e2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+a { color: var(--ink); text-decoration: none; }
+.container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.main { flex: 1; padding: 32px 20px; }
+
+/* ---- Topbar (front navbar uslubi) ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 1000;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; min-height: 72px; }
+.brand { display: flex; align-items: center; }
+.brand img { height: 52px; display: block; }
+.nav { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
+.nav a { color: var(--text); font-weight: 500; font-size: 15px; transition: color .25s ease; }
+.nav a:hover { color: var(--gold); }
+.nav .nav-muted { color: var(--muted); }
+
+/* ---- Cards ---- */
+.card {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px; margin-bottom: 20px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
+}
+.card.narrow { max-width: 440px; margin-left: auto; margin-right: auto; }
+.card.empty { text-align: center; color: var(--muted); }
+.card.empty .btn { margin-top: 14px; }
+
+h1 { font-size: 26px; font-weight: bold; color: var(--black); margin-bottom: 14px; }
+h2 { font-size: 20px; font-weight: bold; color: var(--black); margin-bottom: 10px; }
+h3 { font-size: 16px; font-weight: bold; color: var(--black); margin-bottom: 8px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+/* ---- Forms ---- */
+label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 5px; font-weight: 500; }
+input, select, textarea {
+  width: 100%; padding: 11px 13px; font-size: 15px; font-family: inherit;
+  border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
+}
+.row { display: flex; gap: 12px; }
+.row > div { flex: 1; }
+
+/* ---- Buttons (front .btn-primary uslubi) ---- */
+.btn {
+  display: inline-block; background: var(--black); color: #fff;
+  padding: 12px 24px; border: none; border-radius: 8px; font-size: 15px;
+  font-weight: 500; cursor: pointer; text-align: center; transition: all .3s ease;
+}
+.btn:hover { background: #333; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18); }
+.btn.full { width: 100%; margin-top: 18px; }
+.btn.btn-sm { padding: 8px 16px; font-size: 14px; }
+.btn.btn-outline {
+  background: transparent; color: var(--black); border: 2px solid var(--black);
+}
+.btn.btn-outline:hover { background: var(--black); color: #fff; }
+
+/* ---- Flash ---- */
+.flash { padding: 12px 15px; border-radius: 8px; margin-bottom: 18px; font-size: 14px; }
+.flash-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.flash-error { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+
+/* ---- Layout bits ---- */
+.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.muted { color: var(--muted); font-size: 14px; }
+.center { text-align: center; }
+.link { font-size: 14px; color: var(--ink); text-decoration: underline; }
+.muted a { color: var(--ink); text-decoration: underline; }
+.muted a:hover, .link:hover { color: var(--gold); }
+
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.kv:last-child { border-bottom: none; }
+.kv span { color: var(--muted); font-size: 14px; }
+.kv b { text-align: right; color: var(--black); }
+
+/* ---- Hero (front hero uslubi) ---- */
+.hero {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+              url('/static/hero-cemetery.jpg') no-repeat center/cover;
+  color: #fff; border-radius: 16px; padding: 70px 24px; text-align: center;
+  margin-bottom: 24px;
+}
+.hero h1 { color: #fff; font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.hero p { color: rgba(255, 255, 255, 0.9); max-width: 540px; margin: 14px auto 26px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero .btn { background: #fff; color: var(--black); }
+.hero .btn:hover { background: #e9e9e9; color: var(--black); }
+.hero .btn.btn-outline { background: transparent; color: #fff; border: 2px solid #fff; }
+.hero .btn.btn-outline:hover { background: #fff; color: var(--black); }
+
+/* ---- Grids ---- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.feature { text-align: center; }
+.feature h3 { font-size: 18px; }
+
+/* ---- Stats ---- */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat { text-align: center; text-decoration: none; color: var(--text); }
+.stat:hover { transform: translateY(-4px); }
+.stat-num { display: block; font-size: 32px; font-weight: bold; color: var(--black); }
+.stat span:last-child { font-size: 13px; color: var(--muted); }
+
+/* ---- Service / grave cards ---- */
+.price { font-size: 19px; font-weight: bold; color: var(--black); margin: 12px 0; }
+.service-card .btn { margin-top: 10px; }
+.grave-card h3 { border-bottom: 2px solid var(--gold); padding-bottom: 8px; }
+
+/* ---- Tables ---- */
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; font-size: 12px; color: var(--muted); padding: 9px 8px; border-bottom: 2px solid var(--line); text-transform: uppercase; }
+.table td { padding: 11px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.table tr.clickable { cursor: pointer; }
+.table tr.clickable:hover { background: var(--alt); }
+.table tr.total td { border-top: 2px solid var(--line); border-bottom: none; }
+
+.badge { color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 99px; white-space: nowrap; font-weight: 500; }
+
+.card-box { display: flex; flex-direction: column; gap: 3px; padding: 14px; background: var(--alt); border-radius: 8px; margin: 8px 0; border: 1px solid var(--border); }
+.card-box b { font-size: 18px; letter-spacing: 1px; color: var(--black); }
+
+.auth-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 14px; flex-wrap: wrap; }
+.dash-head { margin-bottom: 18px; }
+
+/* ---- Buyurtma holati bosqichlari ---- */
+.steps { list-style: none; }
+.step { display: flex; align-items: center; gap: 12px; padding: 7px 0; color: var(--muted); }
+.step.done { color: var(--black); font-weight: 500; }
+.step-dot {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--line); color: #fff; font-size: 13px;
+}
+.step.done .step-dot { background: var(--black); }
+
+/* ---- Ish rasmlari (avval / keyin) ---- */
+.work-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.work-photos figure { margin: 0; }
+.work-photos img {
+  width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+  border-radius: 10px; display: block; border: 1px solid var(--border);
+}
+.work-photos figcaption { text-align: center; font-size: 13px; color: var(--muted); margin-top: 6px; }
+@media (max-width: 480px) { .work-photos { grid-template-columns: 1fr; } }
+
+/* ---- To'lov cheki rasmi ---- */
+.receipt-img {
+  max-width: 340px; width: 100%; display: block;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+
+/* ---- Footer (front footer uslubi) ---- */
+.footer { background: var(--ink); color: #ccc; padding: 28px 0; text-align: center; font-size: 14px; }
+.footer .brand-text { color: #fff; font-weight: bold; font-size: 18px; margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .nav { gap: 1rem; }
+  .brand img { height: 44px; }
+}

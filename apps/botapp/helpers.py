@@ -1,18 +1,21 @@
 """
-Async helpers for Telegram bot.
-Uses Django ORM via sync_to_async for safe access from aiogram handlers.
-Covers: user language, catalog services, flower categories/products.
+Async helpers for the Telegram bot.
 
-Performance: user language is cached (middleware runs on every update).
-Catalog queries have NO cache — they hit the DB every time so admin
-changes appear instantly without restart.
+User data (language, full name, phone) is stored in ONE place — the
+SQLAlchemy `users` table (bot.database.models.User). The web app uses the
+same table, so the bot and the website always share a single record per user.
+
+Catalog (services/flowers) still uses Django ORM via sync_to_async.
 """
 from __future__ import annotations
 
+import logging
 import time
 from functools import partial
 
 from asgiref.sync import sync_to_async
+
+logger = logging.getLogger(__name__)
 
 _to_async = partial(sync_to_async, thread_sensitive=False)
 
@@ -49,44 +52,38 @@ _lang_cache = _TTLCache(ttl=120)
 
 
 # ---------------------------------------------------------------------------
-# User language (cached — runs on every update via middleware)
+# User data — single source of truth: the `users` table (SQLAlchemy)
 # ---------------------------------------------------------------------------
 
 
 async def get_user_language(chat_id: int) -> str:
-    """Fetch user language. Cached 120 s to avoid DB hit on every update."""
+    """User tilini `users` jadvalidan oladi. 120 s keshlangan (har update'da chaqiriladi)."""
     key = str(chat_id)
     cached = _lang_cache.get(key)
     if cached is not None:
         return cached
+    try:
+        from bot.database.db import async_session_factory
+        from bot.database.queries import get_user_by_telegram_id
 
-    @_to_async
-    def _fetch():
-        from apps.botapp.models import TelegramUser
-
-        try:
-            return TelegramUser.objects.get(chat_id=chat_id).language
-        except TelegramUser.DoesNotExist:
-            return "uz"
-
-    lang = await _fetch()
+        async with async_session_factory() as session:
+            user = await get_user_by_telegram_id(session, chat_id)
+        lang = user.language if (user and user.language) else "uz"
+    except Exception:  # noqa: BLE001 — middleware'da ishlaydi, hech qachon yiqilmasin
+        logger.exception("get_user_language failed for %s", chat_id)
+        lang = "uz"
     _lang_cache.set(key, lang)
     return lang
 
 
 async def save_user_language(chat_id: int, language: str) -> None:
-    """Save or update user language in Django DB. Invalidates cache."""
+    """User tilini `users` jadvaliga saqlaydi va keshni yangilaydi."""
+    from bot.database.db import async_session_factory
+    from bot.database.queries import create_or_update_user
 
-    @_to_async
-    def _save():
-        from apps.botapp.models import TelegramUser
-
-        TelegramUser.objects.update_or_create(
-            chat_id=chat_id,
-            defaults={"language": language},
-        )
-
-    await _save()
+    async with async_session_factory() as session:
+        await create_or_update_user(session, chat_id, language=language)
+        await session.commit()
     _lang_cache.set(str(chat_id), language)
 
 
@@ -95,71 +92,51 @@ async def save_user_profile(
     *,
     full_name: str | None = None,
     phone_number: str | None = None,
-    username: str | None = None,
+    username: str | None = None,  # `users` jadvalida username yo'q — e'tiborsiz qoldiriladi
     language: str | None = None,
 ) -> None:
-    """
-    Save/update user profile in Django DB (single source of truth).
-    Only provided (non-None) fields are updated.
-    """
+    """User profilini `users` jadvaliga saqlaydi (faqat berilgan maydonlar)."""
+    from bot.database.db import async_session_factory
+    from bot.database.queries import create_or_update_user
 
-    @_to_async
-    def _save():
-        from apps.botapp.models import TelegramUser
-
-        defaults = {}
-        if full_name is not None:
-            defaults["full_name"] = full_name
-        if phone_number is not None:
-            defaults["phone_number"] = phone_number
-        if username is not None:
-            defaults["username"] = username
-        if language is not None:
-            defaults["language"] = language
-        if not defaults:
-            return
-        TelegramUser.objects.update_or_create(
-            chat_id=chat_id,
-            defaults=defaults,
+    async with async_session_factory() as session:
+        await create_or_update_user(
+            session, chat_id,
+            full_name=full_name,
+            phone_number=phone_number,
+            language=language,
         )
-
-    await _save()
+        await session.commit()
     if language is not None:
         _lang_cache.set(str(chat_id), language)
 
 
 async def get_user_profile(chat_id: int) -> dict | None:
-    """Get full user profile from Django DB. Returns dict or None."""
+    """`users` jadvalidan to'liq profilni qaytaradi (dict) yoki None."""
+    from bot.database.db import async_session_factory
+    from bot.database.queries import get_user_by_telegram_id
 
-    @_to_async
-    def _fetch():
-        from apps.botapp.models import TelegramUser
-
-        try:
-            u = TelegramUser.objects.get(chat_id=chat_id)
-            return {
-                "chat_id": u.chat_id,
-                "full_name": u.full_name,
-                "phone_number": u.phone_number,
-                "username": u.username,
-                "language": u.language,
-            }
-        except TelegramUser.DoesNotExist:
-            return None
-
-    return await _fetch()
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, chat_id)
+    if not user:
+        return None
+    return {
+        "chat_id": user.telegram_id,
+        "full_name": user.full_name,
+        "phone_number": user.phone_number,
+        "username": "",
+        "language": user.language,
+    }
 
 
 async def user_exists(chat_id: int) -> bool:
-    """Check if a TelegramUser record exists for this chat_id."""
+    """`users` jadvalida shu chat_id uchun yozuv bor-yo'qligini tekshiradi."""
+    from bot.database.db import async_session_factory
+    from bot.database.queries import get_user_by_telegram_id
 
-    @_to_async
-    def _check():
-        from apps.botapp.models import TelegramUser
-
-        return TelegramUser.objects.filter(chat_id=chat_id).exists()
-
-    return await _check()
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, chat_id)
+    return user is not None
 
 
 # ---------------------------------------------------------------------------
@@ -190,53 +167,6 @@ async def get_service_by_pk(service_id: int):
             return Service.objects.get(pk=service_id)
         except Service.DoesNotExist:
             return None
-
-    return await _fetch()
-
-
-# ---------------------------------------------------------------------------
-# Catalog: Flowers — uses apps.catalog.models.Flower (NO cache)
-# ---------------------------------------------------------------------------
-
-
-async def get_active_flowers() -> list:
-    """Return all active flowers from Django DB. Always fresh."""
-
-    @_to_async
-    def _fetch():
-        from apps.catalog.models import Flower
-
-        return list(Flower.objects.filter(is_active=True).order_by("name"))
-
-    return await _fetch()
-
-
-async def get_flower_by_pk(flower_id: int):
-    """Return a single flower by primary key, or None."""
-
-    @_to_async
-    def _fetch():
-        from apps.catalog.models import Flower
-
-        try:
-            return Flower.objects.get(pk=flower_id)
-        except Flower.DoesNotExist:
-            return None
-
-    return await _fetch()
-
-
-async def get_flower_services() -> list:
-    """Return active services with category='flower'. Always fresh."""
-
-    @_to_async
-    def _fetch():
-        from apps.catalog.models import Service
-
-        return list(
-            Service.objects.filter(is_active=True, category="flower")
-            .order_by("name")
-        )
 
     return await _fetch()
 

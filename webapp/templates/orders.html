@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Buyurtmalar — Maskan{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Buyurtmalar</h1><a href="/services" class="btn btn-sm">+ Yangi buyurtma</a></div>
+{% if orders %}
+<div class="card">
+  <table class="table">
+    <tr><th>№</th><th>Sana</th><th>Summa</th><th>Holat</th></tr>
+    {% for o in orders %}
+    <tr onclick="location.href='/orders/{{ o.id }}'" class="clickable">
+      <td>#{{ o.id }}</td>
+      <td>{{ o.created_at.strftime('%d.%m.%Y') }}</td>
+      <td>{{ format_price(o.total_price) }}</td>
+      <td><span class="badge" style="background:{{ status_color(o.status) }}">{{ status_label(o.status) }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card empty">
+  <p>Hali buyurtmangiz yo'q.</p>
+  <a href="/services" class="btn">Xizmatlarni ko'rish</a>
+</div>
+{% endif %}
+{% endblock %}

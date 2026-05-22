@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Kodni tasdiqlash — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Kodni kiriting</h1>
+  <p class="muted">Telegram botingizga yuborilgan 6 xonali kodni kiriting.</p>
+  {% for e in errors or [] %}<div class="flash flash-error">{{ e }}</div>{% endfor %}
+  <form method="post" action="/verify">
+    <label>Tasdiqlash kodi</label>
+    <input type="text" name="code" inputmode="numeric" maxlength="6"
+           autocomplete="one-time-code" autofocus required>
+    <button type="submit" class="btn full">Tasdiqlash</button>
+  </form>
+  <p class="center"><a href="/code" class="link">Kod kelmadimi? Qayta yuborish</a></p>
+</div>
+{% endblock %}

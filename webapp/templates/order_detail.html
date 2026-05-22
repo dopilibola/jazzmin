@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Buyurtma #{{ order.id }} — Maskan{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Buyurtma #{{ order.id }}</h1>
+  <span class="badge" style="background:{{ status_color(order.status) }}">{{ status_label(order.status) }}</span>
+</div>
+
+{% if order.status == 'cancelled' %}
+  <div class="flash flash-error">Bu buyurtma bekor qilingan.</div>
+{% else %}
+<div class="card">
+  <h3>Buyurtma holati</h3>
+  <ul class="steps">
+    {% for st in order_steps(order) %}
+    <li class="step {% if st.done %}done{% endif %}">
+      <span class="step-dot">{% if st.done %}✓{% endif %}</span>
+      <span>{{ st.label }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="kv"><span>Sana</span><b>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</b></div>
+  <div class="kv"><span>Mijoz</span><b>{{ order.full_name }}</b></div>
+  <div class="kv"><span>Telefon</span><b>{{ order.phone_number }}</b></div>
+  {% if order.deceased_full_name %}
+  <div class="kv"><span>Marhum</span><b>{{ order.deceased_full_name }}</b></div>
+  {% endif %}
+  {% if order.grave %}
+  <div class="kv"><span>Qabriston</span><b>{{ order.grave.cemetery }}</b></div>
+  {% endif %}
+  {% if order.assigned_at %}
+  <div class="kv"><span>Ishchi qabul qildi</span><b>{{ order.assigned_at.strftime('%d.%m.%Y %H:%M') }}</b></div>
+  {% endif %}
+  {% if order.comment %}
+  <div class="kv"><span>Izoh</span><b>{{ order.comment }}</b></div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Xizmatlar</h3>
+  <table class="table">
+    {% for it in order.items %}
+    <tr><td>{{ it.title }}</td><td>×{{ it.quantity }}</td><td>{{ format_price(it.price * it.quantity) }}</td></tr>
+    {% endfor %}
+    <tr class="total"><td colspan="2"><b>Jami</b></td><td><b>{{ format_price(order.total_price) }}</b></td></tr>
+  </table>
+</div>
+
+{% if order.receipt_file_id %}
+<div class="card">
+  <h3>To'lov cheki</h3>
+  <a href="/orders/{{ order.id }}/receipt" target="_blank">
+    <img src="/orders/{{ order.id }}/receipt" alt="To'lov cheki" class="receipt-img" loading="lazy">
+  </a>
+  {% if order.payment_method %}
+  <p class="muted" style="margin-top:8px">To'lov usuli: {{ order.payment_method }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if order.photo1_file_id or order.photo2_file_id %}
+<div class="card">
+  <h3>Bajarilgan ish rasmlari</h3>
+  <div class="work-photos">
+    {% if order.photo1_file_id %}
+    <figure>
+      <a href="/orders/{{ order.id }}/photo/1" target="_blank">
+        <img src="/orders/{{ order.id }}/photo/1" alt="Avval" loading="lazy">
+      </a>
+      <figcaption>Avval</figcaption>
+    </figure>
+    {% endif %}
+    {% if order.photo2_file_id %}
+    <figure>
+      <a href="/orders/{{ order.id }}/photo/2" target="_blank">
+        <img src="/orders/{{ order.id }}/photo/2" alt="Keyin" loading="lazy">
+      </a>
+      <figcaption>Keyin</figcaption>
+    </figure>
+    {% endif %}
+  </div>
+  {% if order.photos_uploaded_at %}
+  <p class="muted" style="margin-top:10px">
+    Yuklangan: {{ order.photos_uploaded_at.strftime('%d.%m.%Y %H:%M') }}
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if order.feedback %}
+<div class="card">
+  <h3>Sizning bahoyingiz</h3>
+  <p>{% if order.feedback == 'good' %}👍 Yaxshi{% else %}👎 Yomon{% endif %}</p>
+  {% if order.feedback_reason %}<p class="muted">{{ order.feedback_reason }}</p>{% endif %}
+</div>
+{% endif %}
+
+{% if order.status in ['new', 'pending_payment'] %}
+<div class="card empty">
+  <p>Buyurtma to'lovni kutmoqda.</p>
+  <a href="/payment/{{ order.id }}" class="btn">To'lovni amalga oshirish</a>
+</div>
+{% endif %}
+<p class="center"><a href="/orders" class="link">← Buyurtmalarga qaytish</a></p>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Maskan{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css?v={{ static_v }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="/" class="brand"><img src="/static/logo2.png" alt="Maskan"></a>
+      <nav class="nav">
+        {% if user %}
+          <a href="/services">Xizmatlar</a>
+          <a href="/graves">Qabrlar</a>
+          <a href="/orders">Buyurtmalar</a>
+          <a href="/profile">Profil</a>
+          <a href="/logout" class="nav-muted">Chiqish</a>
+        {% else %}
+          <a href="/login" class="btn btn-sm">Kirish</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  <main class="container main">
+    {% if flash %}
+      <div class="flash flash-{{ flash.category }}">{{ flash.message }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <div class="container">
+      <div class="brand-text">Maskan</div>
+      <div>Qabr parvarishi xizmati · Islom an'analariga hurmat bilan</div>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

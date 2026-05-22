@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Profilni tahrirlash — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Profilni tahrirlash</h1>
+  {% for e in errors or [] %}<div class="flash flash-error">{{ e }}</div>{% endfor %}
+  <form method="post" action="/profile/edit">
+    <label>Ism-familiya</label>
+    <input type="text" name="full_name" value="{{ user.full_name }}" required>
+    <label>Telefon raqami</label>
+    <input type="tel" name="phone" value="{{ user.phone_number }}" required>
+    <button type="submit" class="btn full">Saqlash</button>
+  </form>
+  <p class="center"><a href="/profile" class="link">← Orqaga</a></p>
+</div>
+{% endblock %}

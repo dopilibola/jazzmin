@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Buyurtma berish — Maskan{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Buyurtma berish</h1>
+  <div class="kv"><span>Xizmat</span><b>{{ service.name }}</b></div>
+  <div class="kv"><span>Narx</span><b>{{ format_price(service.price) }}</b></div>
+  <hr>
+  <form method="post" action="/services/{{ service.id }}/order">
+    <label>Qaysi qabr uchun?</label>
+    {% if graves %}
+      <select name="grave_id">
+        <option value="">— tanlanmagan —</option>
+        {% for g in graves %}
+        <option value="{{ g.id }}">{{ g.deceased_full_name }} — {{ g.cemetery }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <p class="muted">Qabr qo'shilmagan. <a href="/graves/add" class="link">Qabr qo'shish</a> (ixtiyoriy).</p>
+    {% endif %}
+    <label>Izoh (ixtiyoriy)</label>
+    <textarea name="comment" rows="3" placeholder="Qo'shimcha izoh..."></textarea>
+    <button type="submit" class="btn full">Buyurtmani tasdiqlash</button>
+  </form>
+  <p class="center"><a href="/services" class="link">← Xizmatlarga qaytish</a></p>
+</div>
+{% endblock %}

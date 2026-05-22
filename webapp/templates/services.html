@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Xizmatlar — Maskan{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Xizmatlar</h1></div>
+{% if services %}
+  <div class="grid">
+  {% for s in services %}
+    <div class="card service-card">
+      <h3>{{ s.name }}</h3>
+      {% if s.description %}<p class="muted">{{ s.description }}</p>{% endif %}
+      <div class="price">{{ format_price(s.price) }}</div>
+      <a href="/services/{{ s.id }}/order" class="btn full">Buyurtma berish</a>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty"><p>Hozircha xizmatlar yo'q.</p></div>
+{% endif %}
+{% endblock %}

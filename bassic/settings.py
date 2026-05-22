@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'apps.orders',
     # telegram bot language/user management
     'apps.botapp',
+    # bot/sayt ma'lumotlarini admin panelda ko'rsatish
+    'apps.livedata',
 ]
 
 # Middleware
@@ -148,6 +150,9 @@ ADMIN_IDS = os.getenv('ADMIN_IDS', TELEGRAM_ADMIN_CHAT_ID)
 # Google Sheets integration
 GOOGLE_SPREADSHEET_ID = os.getenv('GOOGLE_SPREADSHEET_ID', '')
 GOOGLE_CREDENTIALS_PATH = os.getenv('GOOGLE_CREDENTIALS_PATH', '')
+
+# Veb-ilova (FastAPI) login sahifasi — front "Kirish" tugmasi shu manzilga olib boradi
+WEBAPP_LOGIN_URL = os.getenv('WEBAPP_LOGIN_URL', 'http://localhost:8010/login')
 
 # Jazzmin Admin Theme Settings
 JAZZMIN_SETTINGS = {

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Qabrlar — Maskan{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Qabrlar</h1>
+  <a href="/graves/add" class="btn btn-sm">+ Qabr qo'shish</a>
+</div>
+{% if graves %}
+  <div class="grid">
+  {% for g in graves %}
+    <div class="card grave-card">
+      <h3>{{ g.deceased_full_name }}</h3>
+      <p class="muted">{{ relationship_label(g.relationship_status) }}</p>
+      <div class="kv"><span>Yillar</span><b>{{ format_years(g.birth_year, g.death_year) or "—" }}</b></div>
+      <div class="kv"><span>Viloyat</span><b>{{ g.region }}</b></div>
+      <div class="kv"><span>Tuman</span><b>{{ g.district }}</b></div>
+      <div class="kv"><span>Qabriston</span><b>{{ g.cemetery }}</b></div>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    <p>Hali qabr qo'shilmagan.</p>
+    <a href="/graves/add" class="btn">+ Birinchi qabrni qo'shish</a>
+  </div>
+{% endif %}
+{% endblock %}

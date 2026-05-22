@@ -44,7 +44,7 @@ from bot.keyboards.reply import main_menu_keyboard, profile_menu_keyboard
 from bot.states.forms import GraveState
 from bot.utils.helpers import format_grave_date
 from bot.utils.texts import get_text
-from bot.utils.validators import is_valid_month, is_valid_year
+from bot.utils.validators import is_valid_year
 from apps.botapp.helpers import get_user_language as _get_lang
 from bot.services.google_sheets import log_grave as log_grave_to_sheets, log_user as log_user_to_sheets
 
@@ -232,124 +232,48 @@ async def cb_grave_cancel(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(GraveState.deceased_full_name, F.text)
 async def process_deceased(message: Message, state: FSMContext) -> None:
-    """Process deceased name -> ask birth choice (Aniq/Taxminan)."""
+    """Marhum ismi qabul qilindi -> tug'ilgan yilini so'raymiz."""
     name = (message.text or "").strip()
+    lang = (await state.get_data()).get("lang", "ru")
     if len(name) < 2:
-        lang = (await state.get_data()).get("lang", "ru")
         await message.answer(get_text(lang, "invalid_name"))
         return
 
-    # Track deceased name entry
     await track_event(message.from_user.id, EVENT_GRAVE_DECEASED)
 
     await state.update_data(deceased_full_name=name)
-    await state.set_state(GraveState.birth_choice)
-    lang = (await state.get_data()).get("lang", "ru")
-    await message.answer(
-        get_text(lang, "grave_enter_birth_choice"),
-        reply_markup=grave_approximate_inline(lang, "birth"),
-    )
-
-
-@router.callback_query(lambda c: c.data and c.data.startswith("grave:approx:birth:"))
-async def cb_grave_birth_choice(callback: CallbackQuery, state: FSMContext) -> None:
-    """User selected Aniq or Taxminan for birth -> ask year (or year only)."""
-    await _safe_callback_answer(callback)
-    is_approx = callback.data.split(":")[-1] == "1"
-    await state.update_data(birth_approximate=is_approx)
-    lang = (await state.get_data()).get("lang", "ru")
     await state.set_state(GraveState.birth_year)
-    msg = get_text(lang, "grave_enter_birth_year_only") if is_approx else get_text(lang, "grave_enter_birth_year")
-    await callback.message.answer(msg)
+    await message.answer(get_text(lang, "grave_enter_birth_year_only"))
 
 
 @router.message(GraveState.birth_year, F.text)
 async def process_birth_year(message: Message, state: FSMContext) -> None:
-    """Process birth year. If Taxminan -> death. If Aniq -> ask month."""
+    """Tug'ilgan yili qabul qilindi -> vafot yilini so'raymiz."""
     text = (message.text or "").strip()
     lang = (await state.get_data()).get("lang", "ru")
     if not is_valid_year(text):
         await message.answer(get_text(lang, "order_invalid_year"))
         return
 
-    # Track birth year entry
     await track_event(message.from_user.id, EVENT_GRAVE_BIRTH)
 
     await state.update_data(birth_year=int(text))
-    data = await state.get_data()
-    if data.get("birth_approximate"):
-        await state.set_state(GraveState.death_choice)
-        await message.answer(
-            get_text(lang, "grave_enter_death_choice"),
-            reply_markup=grave_approximate_inline(lang, "death"),
-        )
-    else:
-        await state.set_state(GraveState.birth_month)
-        await message.answer(get_text(lang, "grave_enter_birth_month"))
-
-
-@router.message(GraveState.birth_month, F.text)
-async def process_birth_month(message: Message, state: FSMContext) -> None:
-    """Process birth month (Aniq) -> ask death choice."""
-    text = (message.text or "").strip()
-    lang = (await state.get_data()).get("lang", "ru")
-    if not is_valid_month(text):
-        await message.answer(get_text(lang, "grave_invalid_month"))
-        return
-    await state.update_data(birth_month=int(text))
-    await state.set_state(GraveState.death_choice)
-    await message.answer(
-        get_text(lang, "grave_enter_death_choice"),
-        reply_markup=grave_approximate_inline(lang, "death"),
-    )
-
-
-@router.callback_query(lambda c: c.data and c.data.startswith("grave:approx:death:"))
-async def cb_grave_death_choice(callback: CallbackQuery, state: FSMContext) -> None:
-    """User selected Aniq or Taxminan for death -> ask year (or year only)."""
-    await _safe_callback_answer(callback)
-    is_approx = callback.data.split(":")[-1] == "1"
-    await state.update_data(death_approximate=is_approx)
-    lang = (await state.get_data()).get("lang", "ru")
     await state.set_state(GraveState.death_year)
-    msg = get_text(lang, "grave_enter_death_year_only") if is_approx else get_text(lang, "grave_enter_death_year")
-    await callback.message.answer(msg)
+    await message.answer(get_text(lang, "grave_enter_death_year_only"))
 
 
 @router.message(GraveState.death_year, F.text)
 async def process_death_year(message: Message, state: FSMContext) -> None:
-    """Process death year. If Taxminan -> relationship. If Aniq -> ask month."""
+    """Vafot yili qabul qilindi -> qarindoshlikni so'raymiz."""
     text = (message.text or "").strip()
     lang = (await state.get_data()).get("lang", "ru")
     if not is_valid_year(text):
         await message.answer(get_text(lang, "order_invalid_year"))
         return
 
-    # Track death year entry
     await track_event(message.from_user.id, EVENT_GRAVE_DEATH)
 
     await state.update_data(death_year=int(text))
-    data = await state.get_data()
-    if data.get("death_approximate"):
-        await state.set_state(GraveState.relationship_status)
-        await message.answer(
-            get_text(lang, "grave_enter_relationship"),
-            reply_markup=relationship_inline(lang),
-        )
-    else:
-        await state.set_state(GraveState.death_month)
-        await message.answer(get_text(lang, "grave_enter_death_month"))
-
-
-@router.message(GraveState.death_month, F.text)
-async def process_death_month(message: Message, state: FSMContext) -> None:
-    """Process death month (Aniq) -> ask relationship."""
-    text = (message.text or "").strip()
-    lang = (await state.get_data()).get("lang", "ru")
-    if not is_valid_month(text):
-        await message.answer(get_text(lang, "grave_invalid_month"))
-        return
-    await state.update_data(death_month=int(text))
     await state.set_state(GraveState.relationship_status)
     await message.answer(
         get_text(lang, "grave_enter_relationship"),
@@ -359,18 +283,33 @@ async def process_death_month(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(lambda c: c.data and c.data.startswith("grave:rel:"))
 async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> None:
-    """User selected relationship -> save grave."""
+    """Qarindoshlik tanlandi -> oxirida BITTA savol: sanalar aniqmi?"""
     await _safe_callback_answer(callback)
     rel_part = callback.data.split(":")[-1]
     from bot.database.models import RELATIONSHIP_DEFAULT
 
-    # Track relationship selection
     await track_event(callback.from_user.id, EVENT_GRAVE_RELATIONSHIP)
 
     relationship = RELATIONSHIP_DEFAULT if rel_part == "skip" else rel_part
+    await state.update_data(relationship=relationship)
+    lang = (await state.get_data()).get("lang", "ru")
+    await state.set_state(GraveState.dates_precise)
+    await callback.message.answer(
+        get_text(lang, "grave_dates_choice"),
+        reply_markup=grave_approximate_inline(lang, "all"),
+    )
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("grave:approx:all:"))
+async def cb_grave_dates_precise(callback: CallbackQuery, state: FSMContext) -> None:
+    """Bitta 'sanalar aniqmi?' javobi -> qabrni saqlaymiz."""
+    await _safe_callback_answer(callback)
+    is_approx = callback.data.split(":")[-1] == "1"
     data = await state.get_data()
     lang = data.get("lang", "ru")
     telegram_id = callback.from_user.id
+    relationship = data.get("relationship") or "Blood Relative"
+
     async with async_session_factory() as session:
         user = await get_user_by_telegram_id(session, telegram_id)
         if not user:
@@ -385,16 +324,14 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
             cemetery=data.get("cemetery_name", ""),
             deceased_full_name=data.get("deceased_full_name", ""),
             birth_year=data.get("birth_year"),
-            birth_month=data.get("birth_month"),
-            birth_approximate=data.get("birth_approximate", False),
+            birth_approximate=is_approx,
             death_year=data.get("death_year"),
-            death_month=data.get("death_month"),
-            death_approximate=data.get("death_approximate", False),
+            death_approximate=is_approx,
             relationship_status=relationship,
         )
         await session.commit()
 
-        # Log to Google Sheets
+        # Google Sheets — nusxa
         try:
             await log_grave_to_sheets(
                 grave_id=grave.id,
@@ -411,7 +348,6 @@ async def cb_grave_relationship(callback: CallbackQuery, state: FSMContext) -> N
         except Exception as e:
             logger.error(f"Failed to log grave to Google Sheets: {e}")
 
-    # Track grave complete
     await track_event(telegram_id, EVENT_GRAVE_COMPLETE)
 
     await state.clear()

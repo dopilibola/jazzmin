@@ -30,6 +30,27 @@ services:
     restart: unless-stopped
     command: python bot_main.py
 
+  jazzmin-webapp:
+    build: .
+    container_name: jazzmin-webapp
+    ports:
+      - "8010:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      # Chiqishdan keyin foydalanuvchi shu asl "about" sahifaga yo'naltiriladi
+      - FRONT_URL=http://localhost:8009/
+    depends_on:
+      - jazzmin-db
+    networks:
+      - jazzmin_network
+    restart: unless-stopped
+    # start.sh ENTRYPOINT'ini chetlab o'tib, to'g'ridan-to'g'ri uvicorn'ni ishga tushiramiz
+    entrypoint: []
+    command: uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir webapp
+
   jazzmin-db:
     image: postgres:15
     container_name: jazzmin-db

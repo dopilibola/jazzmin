@@ -35,13 +35,6 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('', include('front.urls')),
-    path('maskan/', include('maskan.urls')),
-    path('userdata/', include('one_to_one.urls')),
-    
-    # API endpoints accessible at root to match clients posting to /api/... paths
-    path('api/bot-register/', maskan_views.api_bot_register, name='api_bot_register'),
-    path('api/bot-start/', maskan_views.api_bot_start, name='api_bot_start'),
-
 ]
 
 # Error handlerlarni maskan/views.py dan ulash

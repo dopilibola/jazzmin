@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}To'lov — Buyurtma #{{ order.id }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>To'lov — Buyurtma #{{ order.id }}</h1>
+  <div class="kv"><span>To'lov summasi</span><b class="price">{{ format_price(order.total_price) }}</b></div>
+  <hr>
+  <h3>To'lov uchun karta raqamlari</h3>
+  {% if card_internal %}
+  <div class="card-box"><span class="muted">O'zbekiston (UZCARD/HUMO)</span><b>{{ card_internal }}</b></div>
+  {% endif %}
+  {% if card_international %}
+  <div class="card-box"><span class="muted">Xalqaro (VISA)</span><b>{{ card_international }}</b></div>
+  {% endif %}
+  {% if not card_internal and not card_international %}
+  <p class="muted">Karta raqamlari sozlanmagan. Operator bilan bog'laning.</p>
+  {% endif %}
+  <hr>
+  <p class="muted">To'lovni amalga oshirib, chek (skrinshot) ni yuklang:</p>
+  <form method="post" action="/payment/{{ order.id }}" enctype="multipart/form-data">
+    <input type="hidden" name="payment_method" value="card">
+    <label>To'lov cheki (rasm)</label>
+    <input type="file" name="receipt" accept="image/*" required>
+    <button type="submit" class="btn full">Chekni yuborish</button>
+  </form>
+  <p class="center"><a href="/orders/{{ order.id }}" class="link">Buyurtmani ko'rish</a></p>
+</div>
+{% endblock %}
