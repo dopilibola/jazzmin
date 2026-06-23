@@ -50,6 +50,7 @@ async def order_form(service_id: int, request: Request,
         "user": user,
         "graves": graves,
         "service": {"id": service.id, "name": service.get_name(lang),
+                    "description": service.get_description(lang),
                     "price": int(service.price or 0)},
     })
 

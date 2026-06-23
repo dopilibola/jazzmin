@@ -5,6 +5,9 @@
   <h1>Buyurtma berish</h1>
   <div class="kv"><span>Xizmat</span><b>{{ service.name }}</b></div>
   <div class="kv"><span>Narx</span><b>{{ format_price(service.price) }}</b></div>
+  {% if service.description %}
+  <div class="service-includes" style="white-space: pre-line; margin-top: 10px;">{{ service.description }}</div>
+  {% endif %}
   <hr>
   <form method="post" action="/services/{{ service.id }}/order">
     <label>Qaysi qabr uchun?</label>

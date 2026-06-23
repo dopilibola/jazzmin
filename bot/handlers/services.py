@@ -13,7 +13,7 @@ from apps.botapp.helpers import (
 from bot.database.analytics import track_event, EVENT_SERVICES_VIEW, EVENT_SERVICE_ORDER
 from bot.database.db import async_session_factory
 from bot.database.queries import get_user_by_telegram_id
-from bot.keyboards.inline import services_list_inline
+from bot.keyboards.inline import services_list_inline, service_order_detail_inline
 from bot.keyboards.reply import back_to_main_keyboard
 from bot.utils.texts import get_text, get_all_button_texts
 
@@ -23,19 +23,11 @@ SERVICES_BUTTON_TEXTS = get_all_button_texts("btn_services")
 
 
 async def _build_services_text(lang: str):
-    """Fetch active services from Django DB and build display text + list."""
+    """Fetch active services from Django DB. Buttons show name+price; details on click."""
     services = await get_active_services()
     if not services:
         return None, None
-    text = get_text(lang, "services_title") + "\n\n"
-    for s in services:
-        name = s.get_name(lang) if hasattr(s, 'get_name') else s.name
-        desc = s.get_description(lang) if hasattr(s, 'get_description') else (s.description or "")
-        desc = desc[:80] if desc else ""
-        text += f"• {name} — {format_price(s.price, lang)}\n"
-        if desc:
-            text += f"  {desc}\n"
-        text += "\n"
+    text = get_text(lang, "services_title")
     return text, services
 
 
@@ -101,6 +93,30 @@ async def continue_shopping_services_callback(callback: CallbackQuery) -> None:
     )
 
 
+@router.callback_query(lambda c: c.data and c.data.startswith("svc:view:"))
+async def service_view_callback(callback: CallbackQuery) -> None:
+    """Show service details (what's included) before ordering."""
+    await callback.answer()
+    service_id = int(callback.data.replace("svc:view:", ""))
+    lang = await _get_lang(callback.from_user.id)
+
+    service = await get_service_by_pk(service_id)
+    if not service:
+        await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
+        return
+
+    name = service.get_name(lang) if hasattr(service, "get_name") else service.name
+    desc = service.get_description(lang) if hasattr(service, "get_description") else (service.description or "")
+    text = f"<b>{name}</b>\n💰 {format_price(service.price, lang)}"
+    if desc:
+        text += f"\n\n{desc}"
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=service_order_detail_inline(lang, service_id),
+    )
+
+
 @router.callback_query(lambda c: c.data and c.data.startswith("svc:order:"))
 async def service_order_callback(callback: CallbackQuery) -> None:
     """Create service order immediately with user data, redirect to payment."""
@@ -124,11 +140,12 @@ async def service_order_callback(callback: CallbackQuery) -> None:
             return
         from bot.database.queries import create_order_from_service
 
+        service_name = service.get_name(lang) if hasattr(service, "get_name") else service.name
         order = await create_order_from_service(
             session,
             user.id,
             service_id,
-            service.name,
+            service_name,
             int(service.price),
             full_name=user.full_name,
             phone_number=user.phone_number,

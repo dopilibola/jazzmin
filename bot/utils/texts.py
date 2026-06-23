@@ -93,6 +93,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "flower_item_added": "Item added to cart",
         "btn_select": "Select",
         "btn_add_to_cart": "Add to Cart",
+        "btn_order_now": "🛒 Order",
         "added_to_cart": "Added to cart.",
         # Cart add notification
         "cart_notify_added": "✅ Product added to your cart.",
@@ -373,6 +374,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "flower_item_added": "Товар добавлен в корзину",
         "btn_select": "Выбрать",
         "btn_add_to_cart": "Добавить в корзину",
+        "btn_order_now": "🛒 Заказать",
         "added_to_cart": "Добавлено в корзину.",
         "cart_notify_added": "✅ Товар добавлен в корзину.",
         "cart_notify_added_with_details": "✅ {product} добавлен в корзину.\nЦена: {price}",
@@ -641,6 +643,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "flower_item_added": "Mahsulot savatga qo'shildi",
         "btn_select": "Tanlash",
         "btn_add_to_cart": "Savatga qo'shish",
+        "btn_order_now": "🛒 Buyurtma berish",
         "added_to_cart": "Savatga qo'shildi.",
         "cart_notify_added": "✅ Mahsulot savatga qo'shildi.",
         "cart_notify_added_with_details": "✅ {product} savatga qo'shildi.\nNarx: {price}",

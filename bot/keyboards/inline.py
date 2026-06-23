@@ -155,7 +155,7 @@ def services_list_inline(
         buttons.append([
             InlineKeyboardButton(
                 text=f"{name} — {format_price(s.price, lang)}",
-                callback_data=f"svc:order:{s.id}",
+                callback_data=f"svc:view:{s.id}",
             ),
         ])
     if add_back:
@@ -163,6 +163,21 @@ def services_list_inline(
             [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="svc:main")]
         )
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def service_order_detail_inline(lang: str, service_id: int) -> InlineKeyboardMarkup:
+    """Xizmat tafsiloti: 'Buyurtma berish' + 'Orqaga' (to'g'ridan-to'g'ri buyurtma)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_text(lang, "btn_order_now"),
+                    callback_data=f"svc:order:{service_id}",
+                ),
+            ],
+            [InlineKeyboardButton(text=get_text(lang, "btn_back"), callback_data="svc:main")],
+        ]
+    )
 
 
 def service_detail_inline(lang: str, service_id: int) -> InlineKeyboardMarkup:

@@ -7,7 +7,7 @@
   {% for s in services %}
     <div class="card service-card">
       <h3>{{ s.name }}</h3>
-      {% if s.description %}<p class="muted">{{ s.description }}</p>{% endif %}
+      {% if s.description %}<p class="muted" style="white-space: pre-line;">{{ s.description }}</p>{% endif %}
       <div class="price">{{ format_price(s.price) }}</div>
       <a href="/services/{{ s.id }}/order" class="btn full">Buyurtma berish</a>
     </div>
