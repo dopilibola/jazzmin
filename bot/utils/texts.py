@@ -184,13 +184,42 @@ TEXTS: dict[str, dict[str, str]] = {
         "payment_rejected": "❌ Your payment for order #{order_id} was rejected. Please contact support.",
         "btn_proceed_to_payment": "Proceed to Payment",
         # Subscriptions
-        "subscriptions_title": "Subscription Plans",
+        "subscriptions_title": "Tariffs",
         "subscriptions_info": (
-            "📋 Monthly subscription plans include:\n\n"
-            "• 4 cleanings per month\n"
-            "• Automatic recurring service\n"
-            "• Photo report included after each visit\n\n"
-            "Contact support for more details."
+            "🏛 <b>MASKAN — CHOOSE A TARIFF</b>\n"
+            "<i>Caring for the memory of your loved ones 🤍</i>\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "💚 <b>ECONOMY</b>  ·  1 visit\n"
+            "💰 <b>59 000 so'm</b>\n"
+            "✓ Headstone washing\n"
+            "✓ Weed removal\n"
+            "✓ Photo report\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🧹 <b>ONE-TIME</b>  ·  1 visit\n"
+            "💰 <b>280 000 so'm</b>\n"
+            "✓ Full cleaning\n"
+            "✓ Cleaning + waste removal\n"
+            "✓ Photo report\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🔥 <b>MONTHLY</b>  ·  4 visits per month   ⭐️ <b>POPULAR</b>\n"
+            "💰 <b>900 000 so'm</b>\n"
+            "✓ Complete cleaning\n"
+            "✓ Weed removal\n"
+            "✓ Improving the grave condition\n"
+            "✓ Landscaping the surrounding area\n"
+            "✓ Photo report\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "👑 <b>YEARLY</b>  ·  1 visit per month   💎 <b>BEST VALUE</b>\n"
+            "💰 <b>3 360 000 so'm</b>\n"
+            "✓ Complete cleaning (all year round)\n"
+            "✓ Weed removal\n"
+            "✓ Improving the grave condition\n"
+            "✓ Landscaping the grave territory\n"
+            "✓ Photo report\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "➕ <b>ADDITIONAL SERVICE</b>\n"
+            "🧱 Clay coating — <b>220 000 so'm</b>\n\n"
+            "📞 To order, contact <b>Support</b>."
         ),
         # Complaints
         "complaints_prompt": "Please write your complaint or suggestion. Your message will be sent to our team.",
@@ -427,13 +456,42 @@ TEXTS: dict[str, dict[str, str]] = {
         "order_enter_full_name": "Введите ваше полное имя:",
         "order_enter_phone": "Отправьте номер телефона:",
         "order_enter_comment": "Добавьте комментарий (необязательно). Или /skip:",
-        "subscriptions_title": "Планы подписки",
+        "subscriptions_title": "Тарифы",
         "subscriptions_info": (
-            "📋 Ежемесячные планы включают:\n\n"
-            "• 4 уборки в месяц\n"
-            "• Автоматическое повторяющееся обслуживание\n"
-            "• Фотоотчёт после каждого визита\n\n"
-            "Свяжитесь с поддержкой для уточнения деталей."
+            "🏛 <b>МАСКАН — ВЫБЕРИТЕ ТАРИФ</b>\n"
+            "<i>Уход за памятью близких 🤍</i>\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "💚 <b>ЭКОНОМ</b>  ·  1 визит\n"
+            "💰 <b>59 000 сум</b>\n"
+            "✓ Мойка надгробия\n"
+            "✓ Прополка сорняков\n"
+            "✓ Фотоотчёт\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🧹 <b>РАЗОВЫЙ</b>  ·  1 визит\n"
+            "💰 <b>280 000 сум</b>\n"
+            "✓ Полная уборка\n"
+            "✓ Уборка + вывоз мусора\n"
+            "✓ Фотоотчёт\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🔥 <b>ЕЖЕМЕСЯЧНЫЙ</b>  ·  4 визита в месяц   ⭐️ <b>ПОПУЛЯРНО</b>\n"
+            "💰 <b>900 000 сум</b>\n"
+            "✓ Полная чистка\n"
+            "✓ Прополка сорняков\n"
+            "✓ Улучшение состояния могилы\n"
+            "✓ Благоустройство территории\n"
+            "✓ Фотоотчёт\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "👑 <b>ГОДОВОЙ</b>  ·  1 визит в месяц   💎 <b>ВЫГОДНО</b>\n"
+            "💰 <b>3 360 000 сум</b>\n"
+            "✓ Полная чистка (в течение года)\n"
+            "✓ Прополка сорняков\n"
+            "✓ Улучшение состояния могилы\n"
+            "✓ Благоустройство территории могилы\n"
+            "✓ Фотоотчёт\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "➕ <b>ДОПОЛНИТЕЛЬНАЯ УСЛУГА</b>\n"
+            "🧱 Глиняная обмазка — <b>220 000 сум</b>\n\n"
+            "📞 Для заказа свяжитесь с <b>Поддержкой</b>."
         ),
         "complaints_prompt": "Напишите вашу жалобу или предложение. Сообщение будет отправлено нашей команде.",
         "complaints_sent": "Спасибо. Ваше сообщение отправлено нашей команде.",
@@ -666,13 +724,42 @@ TEXTS: dict[str, dict[str, str]] = {
         "order_enter_full_name": "To'liq ismingizni kiriting:",
         "order_enter_phone": "Telefon raqamingizni yuboring:",
         "order_enter_comment": "Izoh qo'shing (ixtiyoriy). Yoki /skip:",
-        "subscriptions_title": "Obuna rejalari",
+        "subscriptions_title": "Tariflar",
         "subscriptions_info": (
-            "📋 Oylik obuna rejalari quyidagilarni o'z ichiga oladi:\n\n"
-            "• Oyiga 4 marta tozalash\n"
-            "• Avtomatik takrorlanuvchi xizmat\n"
-            "• Har bir tashrifdan keyin foto hisobot\n\n"
-            "Batafsil ma'lumot uchun qo'llab-quvvatlash bilan bog'laning."
+            "🏛 <b>MASKAN — TARIFNI TANLANG</b>\n"
+            "<i>Yaqinlaringiz xotirasiga g'amxo'rlik 🤍</i>\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "💚 <b>TEJAMKOR</b>  ·  1 ta tashrif\n"
+            "💰 <b>59 000 so'm</b>\n"
+            "✓ Qabr toshini yuvish\n"
+            "✓ Begona o'tlarni yulish\n"
+            "✓ Foto-hisobot\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🧹 <b>BIR MARTALIK</b>  ·  1 ta tashrif\n"
+            "💰 <b>280 000 so'm</b>\n"
+            "✓ Batamom tozalash\n"
+            "✓ Tozalash + chiqindini olib ketish\n"
+            "✓ Foto-hisobot\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "🔥 <b>OYLIK</b>  ·  oyiga 4 ta tashrif   ⭐️ <b>OMMABOP</b>\n"
+            "💰 <b>900 000 so'm</b>\n"
+            "✓ To'liq tozalash\n"
+            "✓ Begona o'tlarni yulish\n"
+            "✓ Qabr holatini yaxshilash\n"
+            "✓ Qabr atrofini obodonlashtirish\n"
+            "✓ Foto-hisobot\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "👑 <b>YILLIK</b>  ·  oyiga 1 ta tashrif   💎 <b>ENG FOYDALI</b>\n"
+            "💰 <b>3 360 000 so'm</b>\n"
+            "✓ To'liq tozalash (yil davomida)\n"
+            "✓ Begona o'tlardan tozalash\n"
+            "✓ Qabr holatini yaxshilash\n"
+            "✓ Qabr hududini obodonlashtirish\n"
+            "✓ Foto-hisobot\n\n"
+            "━━━━━━━━━━━━━━\n\n"
+            "➕ <b>QO'SHIMCHA XIZMAT</b>\n"
+            "🧱 Loy suvoq (gil bilan suvash) — <b>220 000 so'm</b>\n\n"
+            "📞 Buyurtma berish uchun <b>Qo'llab-quvvatlash</b> bilan bog'laning."
         ),
         "complaints_prompt": "Shikoyatingiz yoki taklifingizni yozing. Xabaringiz jamoamizga yuboriladi.",
         "complaints_sent": "Rahmat. Xabaringiz jamoamizga yuborildi.",
