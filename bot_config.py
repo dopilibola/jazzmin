@@ -109,6 +109,9 @@ PAYMENT_BOT_TOKEN: str = os.getenv("BOT_TOKEN3", "").strip()
 # Telegram group for order notifications
 TELEGRAM_GROUP: str = os.getenv("Telegram_group", "").strip()
 
+# Admin chat ID — to'lov tasdiqlangach to'liq buyurtma ma'lumoti shu yerga boradi
+ADMIN_CHAT_ID: str = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "").strip()
+
 # Submission channel (for user submissions with photos)
 SUBMISSION_CHANNEL_ID: str = os.getenv("SUBMISSION_CHANNEL_ID", "").strip()
 

@@ -30,12 +30,44 @@ from bot.keyboards.inline import (
     worker_retake_inline,
     order_take_inline,
 )
-from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN, TELEGRAM_GROUP, ADMIN_IDS
+from bot_config import PAYMENT_BOT_TOKEN, BOT_TOKEN, TELEGRAM_GROUP, ADMIN_IDS, ADMIN_CHAT_ID
 from bot.utils.helpers import format_price
 
 logger = logging.getLogger(__name__)
 
 verification_router = Router(name="payment_verification")
+
+
+def _build_admin_payment_text(info: dict) -> str:
+    """To'lov tasdiqlangach adminga yuboriladigan to'liq ma'lumot (HTML)."""
+    birth = info.get("birth") or "—"
+    death = info.get("death") or "—"
+    services = info.get("services") or "—"
+    lines = [
+        "💰 <b>TO'LOV TASDIQLANDI</b>",
+        f"🧾 Buyurtma: <b>#{info['order_id']}</b>",
+        "",
+        "👤 <b>Mijoz</b>",
+        f"• Ism: {info.get('name') or '—'}",
+        f"• Telefon: {info.get('phone') or '—'}",
+        f"• Chat ID: <code>{info.get('chat_id') or '—'}</code>",
+        f"• Til: {info.get('lang') or '—'}",
+        "",
+        "🪦 <b>Qabr</b>",
+        f"• Marhum: {info.get('deceased') or '—'}",
+        f"• Qarindoshlik: {info.get('relationship') or '—'}",
+        f"• Viloyat / Tuman: {info.get('region') or '—'} / {info.get('district') or '—'}",
+        f"• Qabriston: {info.get('cemetery') or '—'}",
+        f"• Yillar: {birth} – {death}",
+        "",
+        "🧹 <b>Buyurtma</b>",
+        f"• Xizmat(lar): {services}",
+        f"• Jami: {info.get('total') or '—'}",
+        f"• To'lov usuli: {info.get('payment') or '—'}",
+        f"• Izoh: {info.get('comment') or '—'}",
+        f"• Sana: {info.get('created') or '—'}",
+    ]
+    return "\n".join(lines)
 
 
 @verification_router.callback_query(lambda c: c.data and c.data.startswith("verify:"))
@@ -95,6 +127,28 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
             if grave_id and user_id:
                 grave = await get_grave_by_id(session, grave_id, user_id)
 
+            # --- Admin uchun to'liq ma'lumotni commit'dan OLDIN yig'amiz ---
+            # (commit'dan keyin ORM atributlari muddati o'tib, qayta so'rov talab qiladi)
+            admin_info = {
+                "order_id": order_id,
+                "name": order.full_name or (order.user.full_name if order.user else "") or "—",
+                "phone": order.phone_number or (order.user.phone_number if order.user else "") or "—",
+                "chat_id": user_telegram_id,
+                "lang": user_lang,
+                "deceased": (grave.deceased_full_name if grave else order.deceased_full_name) or deceased,
+                "relationship": (grave.relationship_status if grave else "") or "—",
+                "region": (grave.region if grave else "") or "—",
+                "district": (grave.district if grave else "") or "—",
+                "cemetery": (grave.cemetery if grave else "") or cemetery,
+                "birth": (grave.birth_year if grave else order.birth_year),
+                "death": (grave.death_year if grave else order.death_year),
+                "services": ", ".join(items_list) if items_list else "—",
+                "total": format_price(order.total_price or 0),
+                "payment": order.payment_method or "—",
+                "comment": order.comment or "—",
+                "created": order.created_at.strftime("%Y-%m-%d %H:%M") if order.created_at else "—",
+            }
+
             # Update order status to paid
             await update_order_status(session, order_id, ORDER_STATUS_PAID)
             await session.commit()
@@ -129,6 +183,18 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 await main_bot.session.close()
             except Exception as e:
                 logger.error(f"Failed to notify user {user_telegram_id}: {e}")
+
+            # To'lov tasdiqlangach — adminga TO'LIQ ma'lumot (BOT_TOKEN3 orqali)
+            if ADMIN_CHAT_ID:
+                try:
+                    await callback.bot.send_message(
+                        chat_id=ADMIN_CHAT_ID,
+                        text=_build_admin_payment_text(admin_info),
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to notify admin {ADMIN_CHAT_ID} for order #{order_id}: {e}")
+            else:
+                logger.warning("TELEGRAM_ADMIN_CHAT_ID not set — admin payment notification skipped.")
 
             # Update caption
             await callback.message.edit_caption(
