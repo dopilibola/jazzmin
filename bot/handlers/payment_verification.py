@@ -96,15 +96,25 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
         # Get user language and user_id
         user_lang = order.user.language if order.user else "uz"
         user_id = order.user.id if order.user else None
+        if not grave_id:
+            grave_id = order.grave_id
 
         # Get grave info
         cemetery = "—"
         deceased = "—"
+        grave = None
         if grave_id and user_id:
             grave = await get_grave_by_id(session, grave_id, user_id)
             if grave:
                 cemetery = grave.cemetery or "—"
                 deceased = grave.deceased_full_name or "—"
+        if cemetery == "—" and order.cemetery:
+            cemetery = order.cemetery.name or "—"
+        if deceased == "—" and order.deceased_full_name:
+            deceased = order.deceased_full_name
+
+        customer_name = order.full_name or (order.user.full_name if order.user else "") or "—"
+        customer_phone = order.phone_number or (order.user.phone_number if order.user else "") or "—"
 
         if action == "true":
             # Check if order contains services BEFORE commit (items expire after commit)
@@ -123,22 +133,21 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
             logger.info(f"Order #{order_id}: is_service={is_service}, items_list={items_list}")
 
             # Get grave info before commit
-            grave = None
-            if grave_id and user_id:
+            if grave_id and user_id and grave is None:
                 grave = await get_grave_by_id(session, grave_id, user_id)
 
             # --- Admin uchun to'liq ma'lumotni commit'dan OLDIN yig'amiz ---
             # (commit'dan keyin ORM atributlari muddati o'tib, qayta so'rov talab qiladi)
             admin_info = {
                 "order_id": order_id,
-                "name": order.full_name or (order.user.full_name if order.user else "") or "—",
-                "phone": order.phone_number or (order.user.phone_number if order.user else "") or "—",
+                "name": customer_name,
+                "phone": customer_phone,
                 "chat_id": user_telegram_id,
                 "lang": user_lang,
                 "deceased": (grave.deceased_full_name if grave else order.deceased_full_name) or deceased,
                 "relationship": (grave.relationship_status if grave else "") or "—",
-                "region": (grave.region if grave else "") or "—",
-                "district": (grave.district if grave else "") or "—",
+                "region": (grave.region if grave else (order.region.get_name(user_lang) if order.region else "")) or "—",
+                "district": (grave.district if grave else (order.district.get_name(user_lang) if order.district else "")) or "—",
                 "cemetery": (grave.cemetery if grave else "") or cemetery,
                 "birth": (grave.birth_year if grave else order.birth_year),
                 "death": (grave.death_year if grave else order.death_year),
@@ -171,7 +180,14 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 )
                 await main_bot.send_message(
                     chat_id=user_telegram_id,
-                    text=get_text(user_lang, "payment_verified", cemetery=cemetery, deceased=deceased),
+                    text=get_text(
+                        user_lang,
+                        "payment_verified",
+                        customer=customer_name,
+                        phone=customer_phone,
+                        cemetery=cemetery,
+                        deceased=deceased,
+                    ),
                 )
 
                 # Send order to Telegram group for workers (ONLY services, not flowers)
@@ -225,7 +241,14 @@ async def verify_payment_callback(callback: CallbackQuery) -> None:
                 )
                 await main_bot.send_message(
                     chat_id=user_telegram_id,
-                    text=get_text(user_lang, "payment_not_verified", cemetery=cemetery, deceased=deceased),
+                    text=get_text(
+                        user_lang,
+                        "payment_not_verified",
+                        customer=customer_name,
+                        phone=customer_phone,
+                        cemetery=cemetery,
+                        deceased=deceased,
+                    ),
                 )
                 await main_bot.session.close()
             except Exception as e:

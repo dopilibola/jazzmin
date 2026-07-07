@@ -202,6 +202,8 @@ async def payment_method_callback(callback: CallbackQuery, state: FSMContext) ->
         order = await get_order_by_id(session, order_id)
     if not order:
         return
+    if not grave_id:
+        grave_id = order.grave_id
     total_str = format_price(order.total_price, lang)
 
     # Select card and info text based on payment method
@@ -264,7 +266,10 @@ async def payment_receipt_upload(message: Message, state: FSMContext) -> None:
             await state.clear()
             return
 
-        # Get grave info if selected
+        if not grave_id:
+            grave_id = order.grave_id
+
+        # Get grave info if selected or already attached to order
         if grave_id:
             grave = await get_grave_by_id(session, grave_id, user.id)
 
