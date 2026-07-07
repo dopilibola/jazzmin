@@ -28,21 +28,24 @@ from bot.database.queries import (
     get_cemetery_by_id,
     get_district_by_id,
     get_districts_by_region,
+    get_order_by_id,
     get_region_by_id,
     get_regions,
     get_user_by_telegram_id,
     list_user_graves,
+    update_order_grave,
 )
 from bot.keyboards.inline import (
     grave_cemeteries_inline,
     grave_districts_inline,
     grave_regions_inline,
     grave_approximate_inline,
+    payment_methods_inline,
     relationship_inline,
 )
 from bot.keyboards.reply import main_menu_keyboard, profile_menu_keyboard
 from bot.states.forms import GraveState
-from bot.utils.helpers import format_grave_date
+from bot.utils.helpers import format_grave_date, format_price
 from bot.utils.texts import get_text
 from bot.utils.validators import is_valid_year
 from apps.botapp.helpers import get_user_language as _get_lang
@@ -309,6 +312,9 @@ async def cb_grave_dates_precise(callback: CallbackQuery, state: FSMContext) -> 
     lang = data.get("lang", "ru")
     telegram_id = callback.from_user.id
     relationship = data.get("relationship") or "Blood Relative"
+    return_to_payment = bool(data.get("return_to_payment"))
+    payment_order_id = data.get("payment_order_id")
+    payment_order = None
 
     async with async_session_factory() as session:
         user = await get_user_by_telegram_id(session, telegram_id)
@@ -329,6 +335,12 @@ async def cb_grave_dates_precise(callback: CallbackQuery, state: FSMContext) -> 
             death_approximate=is_approx,
             relationship_status=relationship,
         )
+        if return_to_payment and payment_order_id:
+            payment_order = await get_order_by_id(session, int(payment_order_id))
+            if payment_order and payment_order.user_id == user.id:
+                await update_order_grave(session, payment_order.id, grave.id)
+            else:
+                payment_order = None
         await session.commit()
 
         # Google Sheets — nusxa
@@ -351,6 +363,23 @@ async def cb_grave_dates_precise(callback: CallbackQuery, state: FSMContext) -> 
     await track_event(telegram_id, EVENT_GRAVE_COMPLETE)
 
     await state.clear()
+    if payment_order:
+        total_str = format_price(payment_order.total_price, lang)
+        grave_info = (
+            f"\n🪦 {grave.deceased_full_name or '—'}\n"
+            f"📍 {grave.cemetery or '—'}\n\n"
+        )
+        await callback.message.answer(get_text(lang, "grave_added"))
+        await callback.message.answer(
+            get_text(lang, "payment_title")
+            + "\n\n"
+            + get_text(lang, "order_placed", order_id=payment_order.id, total=total_str)
+            + grave_info
+            + get_text(lang, "payment_select_method"),
+            reply_markup=payment_methods_inline(lang, payment_order.id),
+        )
+        return
+
     await callback.message.answer(
         get_text(lang, "grave_added"),
         reply_markup=main_menu_keyboard(lang),

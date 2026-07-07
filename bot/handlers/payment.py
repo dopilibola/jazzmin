@@ -19,6 +19,7 @@ from bot.database.analytics import (
 from bot.database.db import async_session_factory
 from bot.database.queries import (
     get_order_by_id,
+    get_regions,
     get_user_by_telegram_id,
     update_order_receipt,
     update_order_status,
@@ -26,7 +27,13 @@ from bot.database.queries import (
     get_grave_by_id,
     update_order_grave,
 )
-from bot.keyboards.inline import payment_methods_inline, receipt_confirm_reject_inline, receipt_verify_inline, select_grave_for_order_inline
+from bot.keyboards.inline import (
+    grave_regions_inline,
+    payment_methods_inline,
+    receipt_confirm_reject_inline,
+    receipt_verify_inline,
+    select_grave_for_order_inline,
+)
 from bot.keyboards.reply import main_menu_keyboard
 from bot.utils.helpers import format_price
 from bot.utils.telegram_helpers import safe_edit_text
@@ -42,7 +49,7 @@ from bot_config import (
 )
 from bot.utils.texts import get_text
 from bot.database.models import ORDER_STATUS_PAID, ORDER_STATUS_CANCELLED
-from bot.states.forms import PaymentState
+from bot.states.forms import GraveState, PaymentState
 from apps.botapp.helpers import get_user_language as _get_lang
 
 router = Router(name="payment")
@@ -137,7 +144,7 @@ async def payment_grave_selected_callback(callback: CallbackQuery, state: FSMCon
 
 @router.callback_query(lambda c: c.data and c.data.startswith("pay:newgrave:"))
 async def payment_new_grave_callback(callback: CallbackQuery, state: FSMContext) -> None:
-    """User wants to add a new grave. Redirect to grave flow."""
+    """User wants to add a new grave for this order. Start grave FSM."""
     await callback.answer()
     parts = callback.data.split(":")
     if len(parts) < 3:
@@ -145,12 +152,24 @@ async def payment_new_grave_callback(callback: CallbackQuery, state: FSMContext)
     order_id = int(parts[2])
     lang = await _get_lang(callback.from_user.id)
 
-    # Save order_id to return after grave creation
-    await state.update_data(payment_order_id=order_id, return_to_payment=True)
+    async with async_session_factory() as session:
+        user = await get_user_by_telegram_id(session, callback.from_user.id)
+        order = await get_order_by_id(session, order_id)
+        if not user or not order or order.user_id != user.id:
+            await callback.answer(get_text(lang, "cart_empty"), show_alert=True)
+            return
+        regions = await get_regions(session)
 
-    # Redirect to grave creation - user needs to go to profile and add grave
+    await state.set_state(GraveState.region)
+    await state.update_data(
+        lang=lang,
+        payment_order_id=order_id,
+        return_to_payment=True,
+    )
+    await safe_edit_text(callback, get_text(lang, "add_grave_first"))
     await callback.message.answer(
-        get_text(lang, "add_grave_first"),
+        get_text(lang, "grave_enter_region"),
+        reply_markup=grave_regions_inline(regions, lang),
     )
 
 
